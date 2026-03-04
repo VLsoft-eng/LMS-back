@@ -8,10 +8,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-/**
- * TICKET-BE-04 (stub) / TICKET-BE-06: Loads UserDetails by email for Spring Security.
- * Used by the authentication manager; extended with JWT in TICKET-BE-04.
- */
+import java.util.Collections;
+
 @Service
 @RequiredArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {
@@ -21,10 +19,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         return userRepository.findByEmail(email)
-                .map(u -> User.withUsername(u.getEmail())
-                        .password(u.getPasswordHash())
-                        .roles("USER")
+                .map(entity -> User.withUsername(entity.getEmail())
+                        .password(entity.getPasswordHash())
+                        .authorities(Collections.emptyList())
                         .build())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "User not found with email: " + email));
     }
 }
