@@ -20,18 +20,18 @@ class CorsIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void options_preflightRequest_allowsGetMethod() throws Exception {
+    void options_preflightRequest_allowsAnyOrigin() throws Exception {
         mockMvc.perform(options("/api/v1/classes")
-                        .header("Origin", "http://localhost:3000")
+                        .header("Origin", "https://my-production-app.com")
                         .header("Access-Control-Request-Method", "GET"))
                 .andExpect(status().isOk())
-                .andExpect(header().exists("Access-Control-Allow-Origin"));
+                .andExpect(header().string("Access-Control-Allow-Origin", "https://my-production-app.com"));
     }
 
     @Test
     void options_preflightRequest_allowsDeleteMethod() throws Exception {
         mockMvc.perform(options("/api/v1/classes/some-id")
-                        .header("Origin", "http://localhost:3000")
+                        .header("Origin", "http://example.org")
                         .header("Access-Control-Request-Method", "DELETE"))
                 .andExpect(status().isOk())
                 .andExpect(header().exists("Access-Control-Allow-Origin"));
@@ -40,7 +40,7 @@ class CorsIT extends AbstractIntegrationTest {
     @Test
     void options_preflightRequest_allowsAuthorizationHeader() throws Exception {
         mockMvc.perform(options("/api/v1/users/me")
-                        .header("Origin", "http://localhost:3000")
+                        .header("Origin", "http://any-frontend.dev")
                         .header("Access-Control-Request-Method", "GET")
                         .header("Access-Control-Request-Headers", "Authorization"))
                 .andExpect(status().isOk())
