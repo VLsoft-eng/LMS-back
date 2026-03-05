@@ -13,13 +13,13 @@ import com.example.lms.repository.AssignmentRepository;
 import com.example.lms.repository.SubmissionRepository;
 import com.example.lms.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,12 +31,11 @@ public class AssignmentService {
     private final ClassSecurityService classSecurityService;
 
     @Transactional(readOnly = true)
-    public List<AssignmentDto> getAssignments(UUID classId, UUID currentUserId) {
+    public Page<AssignmentDto> getAssignments(UUID classId, UUID currentUserId, Pageable pageable) {
         ClassMemberEntity member = classSecurityService.requireMember(classId, currentUserId);
 
-        return assignmentRepository.findAllByClassIdOrderByCreatedAtDesc(classId).stream()
-                .map(a -> toAssignmentDto(a, member.getRole(), currentUserId))
-                .collect(Collectors.toList());
+        return assignmentRepository.findAllByClassIdOrderByCreatedAtDesc(classId, pageable)
+                .map(a -> toAssignmentDto(a, member.getRole(), currentUserId));
     }
 
     @Transactional

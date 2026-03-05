@@ -1,9 +1,10 @@
 package com.example.lms.repository;
 
 import com.example.lms.entity.ClassMemberEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,7 +15,7 @@ public interface ClassMemberRepository extends JpaRepository<ClassMemberEntity, 
 
 	Optional<ClassMemberEntity> findByClassIdAndUserId(UUID classId, UUID userId);
 
-	List<ClassMemberEntity> findAllByClassIdOrderByJoinedAtAsc(UUID classId);
+	Page<ClassMemberEntity> findAllByClassIdOrderByJoinedAtAsc(UUID classId, Pageable pageable);
 
 	long countByClassId(UUID classId);
 }

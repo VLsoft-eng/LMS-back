@@ -9,10 +9,11 @@ import com.example.lms.security.CurrentUser;
 import com.example.lms.service.ClassService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -31,8 +32,8 @@ public class ClassController {
     }
 
     @GetMapping
-    public List<ClassDto> getMyClasses(@CurrentUser UserEntity currentUser) {
-        return classService.getMyClasses(currentUser.getId());
+    public Page<ClassDto> getMyClasses(@CurrentUser UserEntity currentUser, Pageable pageable) {
+        return classService.getMyClasses(currentUser.getId(), pageable);
     }
 
     @PostMapping("/join")

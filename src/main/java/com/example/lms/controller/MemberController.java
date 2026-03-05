@@ -7,9 +7,10 @@ import com.example.lms.security.CurrentUser;
 import com.example.lms.service.MemberService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -20,9 +21,10 @@ public class MemberController {
     private final MemberService memberService;
 
     @GetMapping
-    public List<MemberDto> getMembers(@PathVariable UUID classId,
-                                     @CurrentUser UserEntity currentUser) {
-        return memberService.getMembers(classId, currentUser.getId());
+    public Page<MemberDto> getMembers(@PathVariable UUID classId,
+                                      @CurrentUser UserEntity currentUser,
+                                      Pageable pageable) {
+        return memberService.getMembers(classId, currentUser.getId(), pageable);
     }
 
     @PutMapping("/{memberUserId}/role")

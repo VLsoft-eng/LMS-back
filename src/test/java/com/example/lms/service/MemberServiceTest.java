@@ -122,11 +122,12 @@ class MemberServiceTest {
     @Test
     void should_throwForbidden_whenNotMember_onGetMembers() {
         // Given
+        Pageable pageable = PageRequest.of(0, 20);
         when(classSecurityService.requireMember(classId, owner.getId()))
                 .thenThrow(new ForbiddenException("Not a member of class"));
 
         // When / Then
-        assertThatThrownBy(() -> memberService.getMembers(classId, owner.getId()))
+        assertThatThrownBy(() -> memberService.getMembers(classId, owner.getId(), pageable))
                 .isInstanceOf(ForbiddenException.class);
     }
 

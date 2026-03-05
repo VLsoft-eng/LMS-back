@@ -1,9 +1,10 @@
 package com.example.lms.repository;
 
 import com.example.lms.entity.CommentEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -11,5 +12,5 @@ import java.util.UUID;
  */
 public interface CommentRepository extends JpaRepository<CommentEntity, UUID> {
 
-    List<CommentEntity> findAllByAssignmentIdOrderByCreatedAtAsc(UUID assignmentId);
+    Page<CommentEntity> findAllByAssignmentIdOrderByCreatedAtAsc(UUID assignmentId, Pageable pageable);
 }
