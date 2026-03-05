@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -15,6 +16,8 @@ public interface ClassRepository extends JpaRepository<ClassEntity, UUID> {
 
 	@Query("SELECT c FROM ClassEntity c WHERE c.id IN (SELECT m.classId FROM ClassMemberEntity m WHERE m.userId = :userId)")
 	List<ClassEntity> findAllByMembersUserId(@Param("userId") UUID userId);
+
+	Optional<ClassEntity> findByCode(String code);
 
 	boolean existsByCode(String code);
 }
