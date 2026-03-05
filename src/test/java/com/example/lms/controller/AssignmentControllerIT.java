@@ -91,9 +91,10 @@ class AssignmentControllerIT extends AbstractIntegrationTest {
 
         mockMvc.perform(get(CLASSES_URL + "/" + cls.getId() + "/assignments"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].id").value(a.getId().toString()))
-                .andExpect(jsonPath("$[0].title").value("Homework 1"));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].id").value(a.getId().toString()))
+                .andExpect(jsonPath("$.content[0].title").value("Homework 1"))
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test
@@ -113,8 +114,8 @@ class AssignmentControllerIT extends AbstractIntegrationTest {
 
         mockMvc.perform(get(CLASSES_URL + "/" + cls.getId() + "/assignments"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].submissionStatus").value("GRADED"))
-                .andExpect(jsonPath("$[0].grade").value(90));
+                .andExpect(jsonPath("$.content[0].submissionStatus").value("GRADED"))
+                .andExpect(jsonPath("$.content[0].grade").value(90));
     }
 
     @Test
@@ -128,8 +129,8 @@ class AssignmentControllerIT extends AbstractIntegrationTest {
 
         mockMvc.perform(get(CLASSES_URL + "/" + cls.getId() + "/assignments"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].submissionStatus").value("NOT_SUBMITTED"))
-                .andExpect(jsonPath("$[0].grade").isEmpty());
+                .andExpect(jsonPath("$.content[0].submissionStatus").value("NOT_SUBMITTED"))
+                .andExpect(jsonPath("$.content[0].grade").isEmpty());
     }
 
     @Test

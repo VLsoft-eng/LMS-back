@@ -15,6 +15,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.Instant;
 import java.util.List;
@@ -92,25 +96,27 @@ class MemberServiceTest {
     @Test
     void should_returnMembers_whenMemberOfClass() {
         // Given
+        Pageable pageable = PageRequest.of(0, 20);
         when(classSecurityService.requireMember(classId, owner.getId())).thenReturn(ownerMember);
-        when(classMemberRepository.findAllByClassIdOrderByJoinedAtAsc(classId))
-                .thenReturn(List.of(ownerMember, teacherMember, studentMember));
+        when(classMemberRepository.findAllByClassIdOrderByJoinedAtAsc(classId, pageable))
+                .thenReturn(new PageImpl<>(List.of(ownerMember, teacherMember, studentMember), pageable, 3));
         when(userRepository.findById(owner.getId())).thenReturn(Optional.of(owner));
         when(userRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
         when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
 
         // When
-        List<MemberDto> result = memberService.getMembers(classId, owner.getId());
+        Page<MemberDto> result = memberService.getMembers(classId, owner.getId(), pageable);
 
         // Then
-        assertThat(result).hasSize(3);
-        assertThat(result.get(0).userId()).isEqualTo(owner.getId());
-        assertThat(result.get(0).firstName()).isEqualTo("Owner");
-        assertThat(result.get(0).role()).isEqualTo("OWNER");
-        assertThat(result.get(1).userId()).isEqualTo(teacher.getId());
-        assertThat(result.get(1).role()).isEqualTo("TEACHER");
-        assertThat(result.get(2).userId()).isEqualTo(student.getId());
-        assertThat(result.get(2).role()).isEqualTo("STUDENT");
+        assertThat(result.getContent()).hasSize(3);
+        assertThat(result.getContent().get(0).userId()).isEqualTo(owner.getId());
+        assertThat(result.getContent().get(0).firstName()).isEqualTo("Owner");
+        assertThat(result.getContent().get(0).role()).isEqualTo("OWNER");
+        assertThat(result.getContent().get(1).userId()).isEqualTo(teacher.getId());
+        assertThat(result.getContent().get(1).role()).isEqualTo("TEACHER");
+        assertThat(result.getContent().get(2).userId()).isEqualTo(student.getId());
+        assertThat(result.getContent().get(2).role()).isEqualTo("STUDENT");
+        assertThat(result.getTotalElements()).isEqualTo(3);
     }
 
     @Test

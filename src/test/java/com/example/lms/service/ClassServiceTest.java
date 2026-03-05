@@ -18,6 +18,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -99,19 +103,22 @@ class ClassServiceTest {
     @Test
     void should_returnMyClasses_withMyRole() {
         // Given
-        when(classRepository.findAllByMembersUserId(user.getId())).thenReturn(List.of(cls));
+        Pageable pageable = PageRequest.of(0, 20);
+        when(classRepository.findAllByMembersUserId(user.getId(), pageable))
+                .thenReturn(new PageImpl<>(List.of(cls), pageable, 1));
         when(classMemberRepository.findByClassIdAndUserId(cls.getId(), user.getId()))
                 .thenReturn(Optional.of(ownerMember));
         when(classMemberRepository.countByClassId(cls.getId())).thenReturn(1L);
 
         // When
-        List<ClassDto> result = classService.getMyClasses(user.getId());
+        Page<ClassDto> result = classService.getMyClasses(user.getId(), pageable);
 
         // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).name()).isEqualTo("Math");
-        assertThat(result.get(0).myRole()).isEqualTo("OWNER");
-        assertThat(result.get(0).memberCount()).isEqualTo(1);
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).name()).isEqualTo("Math");
+        assertThat(result.getContent().get(0).myRole()).isEqualTo("OWNER");
+        assertThat(result.getContent().get(0).memberCount()).isEqualTo(1);
+        assertThat(result.getTotalElements()).isEqualTo(1);
     }
 
     // ─── joinClass ────────────────────────────────────────────────────────────

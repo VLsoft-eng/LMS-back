@@ -18,6 +18,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.Instant;
 import java.util.List;
@@ -83,6 +87,7 @@ class CommentServiceTest {
     @Test
     void should_returnComments_whenMember() {
         // Given
+        Pageable pageable = PageRequest.of(0, 20);
         when(assignmentRepository.findById(assignment.getId())).thenReturn(Optional.of(assignment));
         when(classSecurityService.requireMember(classId, owner.getId())).thenReturn(ownerMember);
 
@@ -93,55 +98,60 @@ class CommentServiceTest {
                 .text("Great task!")
                 .createdAt(Instant.now())
                 .build();
-        when(commentRepository.findAllByAssignmentIdOrderByCreatedAtAsc(assignment.getId()))
-                .thenReturn(List.of(comment));
+        when(commentRepository.findAllByAssignmentIdOrderByCreatedAtAsc(assignment.getId(), pageable))
+                .thenReturn(new PageImpl<>(List.of(comment), pageable, 1));
         when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
 
         // When
-        List<CommentDto> result = commentService.getComments(assignment.getId(), owner.getId());
+        Page<CommentDto> result = commentService.getComments(assignment.getId(), owner.getId(), pageable);
 
         // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).text()).isEqualTo("Great task!");
-        assertThat(result.get(0).authorName()).isEqualTo("Student User");
-        assertThat(result.get(0).assignmentId()).isEqualTo(assignment.getId());
-        assertThat(result.get(0).authorId()).isEqualTo(student.getId());
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).text()).isEqualTo("Great task!");
+        assertThat(result.getContent().get(0).authorName()).isEqualTo("Student User");
+        assertThat(result.getContent().get(0).assignmentId()).isEqualTo(assignment.getId());
+        assertThat(result.getContent().get(0).authorId()).isEqualTo(student.getId());
+        assertThat(result.getTotalElements()).isEqualTo(1);
     }
 
     @Test
-    void should_returnEmptyList_whenNoComments() {
+    void should_returnEmptyPage_whenNoComments() {
         // Given
+        Pageable pageable = PageRequest.of(0, 20);
         when(assignmentRepository.findById(assignment.getId())).thenReturn(Optional.of(assignment));
         when(classSecurityService.requireMember(classId, owner.getId())).thenReturn(ownerMember);
-        when(commentRepository.findAllByAssignmentIdOrderByCreatedAtAsc(assignment.getId()))
-                .thenReturn(List.of());
+        when(commentRepository.findAllByAssignmentIdOrderByCreatedAtAsc(assignment.getId(), pageable))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
         // When
-        List<CommentDto> result = commentService.getComments(assignment.getId(), owner.getId());
+        Page<CommentDto> result = commentService.getComments(assignment.getId(), owner.getId(), pageable);
 
         // Then
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
+        assertThat(result.getTotalElements()).isEqualTo(0);
     }
 
     @Test
     void should_throw404_whenAssignmentNotFound_onGetComments() {
         // Given
+        Pageable pageable = PageRequest.of(0, 20);
         when(assignmentRepository.findById(any())).thenReturn(Optional.empty());
 
         // When / Then
-        assertThatThrownBy(() -> commentService.getComments(UUID.randomUUID(), owner.getId()))
+        assertThatThrownBy(() -> commentService.getComments(UUID.randomUUID(), owner.getId(), pageable))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void should_throwForbidden_whenNotMember_onGetComments() {
         // Given
+        Pageable pageable = PageRequest.of(0, 20);
         when(assignmentRepository.findById(assignment.getId())).thenReturn(Optional.of(assignment));
         when(classSecurityService.requireMember(classId, student.getId()))
                 .thenThrow(new ForbiddenException("Not a member"));
 
         // When / Then
-        assertThatThrownBy(() -> commentService.getComments(assignment.getId(), student.getId()))
+        assertThatThrownBy(() -> commentService.getComments(assignment.getId(), student.getId(), pageable))
                 .isInstanceOf(ForbiddenException.class);
     }
 

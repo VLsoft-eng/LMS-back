@@ -104,12 +104,13 @@ class CommentControllerIT extends AbstractIntegrationTest {
 
         mockMvc.perform(get(ASSIGNMENTS_URL + "/" + assignment.getId() + "/comments"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].text").value("First comment"))
-                .andExpect(jsonPath("$[0].authorName").value("Student User"))
-                .andExpect(jsonPath("$[1].text").value("Second comment"))
-                .andExpect(jsonPath("$[1].authorName").value("Owner User"));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].text").value("First comment"))
+                .andExpect(jsonPath("$.content[0].authorName").value("Student User"))
+                .andExpect(jsonPath("$.content[1].text").value("Second comment"))
+                .andExpect(jsonPath("$.content[1].authorName").value("Owner User"))
+                .andExpect(jsonPath("$.totalElements").value(2));
     }
 
     @Test
@@ -123,7 +124,7 @@ class CommentControllerIT extends AbstractIntegrationTest {
 
         mockMvc.perform(get(ASSIGNMENTS_URL + "/" + assignment.getId() + "/comments"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].text").value("Teacher comment"));
+                .andExpect(jsonPath("$.content[0].text").value("Teacher comment"));
     }
 
     @Test
@@ -131,8 +132,9 @@ class CommentControllerIT extends AbstractIntegrationTest {
     void getComments_emptyList_returns200() throws Exception {
         mockMvc.perform(get(ASSIGNMENTS_URL + "/" + assignment.getId() + "/comments"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(0));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content.length()").value(0))
+                .andExpect(jsonPath("$.totalElements").value(0));
     }
 
     @Test

@@ -93,10 +93,11 @@ class ClassControllerIT extends AbstractIntegrationTest {
         // When / Then
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].name").value("Physics"))
-                .andExpect(jsonPath("$[0].myRole").value("OWNER"))
-                .andExpect(jsonPath("$[0].memberCount").value(1));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].name").value("Physics"))
+                .andExpect(jsonPath("$.content[0].myRole").value("OWNER"))
+                .andExpect(jsonPath("$.content[0].memberCount").value(1))
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test
