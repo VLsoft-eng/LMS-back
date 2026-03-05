@@ -12,4 +12,6 @@ import java.util.UUID;
 public interface ClassMemberRepository extends JpaRepository<ClassMemberEntity, UUID> {
 
 	Optional<ClassMemberEntity> findByClassIdAndUserId(UUID classId, UUID userId);
+
+	long countByClassId(UUID classId);
 }
