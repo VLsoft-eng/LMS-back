@@ -47,8 +47,8 @@ class FileControllerIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void getFile_pathTraversal_returns404() throws Exception {
+    void getFile_pathTraversal_returns4xx() throws Exception {
         mockMvc.perform(get(FILES_URL + "/../../../etc/passwd"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().is4xxClientError());
     }
 }

@@ -57,7 +57,9 @@ class FileStorageServiceTest {
         Resource resource = fileStorageService.getFileAsResource(filename);
 
         assertThat(resource.exists()).isTrue();
-        assertThat(new String(resource.getInputStream().readAllBytes())).isEqualTo("hello world");
+        try (var is = resource.getInputStream()) {
+            assertThat(new String(is.readAllBytes())).isEqualTo("hello world");
+        }
     }
 
     @Test
