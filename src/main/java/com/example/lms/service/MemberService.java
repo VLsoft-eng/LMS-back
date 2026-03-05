@@ -10,12 +10,12 @@ import com.example.lms.exception.ResourceNotFoundException;
 import com.example.lms.repository.ClassMemberRepository;
 import com.example.lms.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,12 +26,11 @@ public class MemberService {
     private final ClassSecurityService  classSecurityService;
 
     @Transactional(readOnly = true)
-    public List<MemberDto> getMembers(UUID classId, UUID currentUserId) {
+    public Page<MemberDto> getMembers(UUID classId, UUID currentUserId, Pageable pageable) {
         classSecurityService.requireMember(classId, currentUserId);
 
-        return classMemberRepository.findAllByClassIdOrderByJoinedAtAsc(classId).stream()
-                .map(this::toMemberDto)
-                .collect(Collectors.toList());
+        return classMemberRepository.findAllByClassIdOrderByJoinedAtAsc(classId, pageable)
+                .map(this::toMemberDto);
     }
 
     @Transactional

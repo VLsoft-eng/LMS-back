@@ -19,6 +19,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.Instant;
 import java.util.List;
@@ -92,9 +96,10 @@ class AssignmentServiceTest {
     @Test
     void should_returnAssignmentsWithSubmissionStatus_whenStudent() {
         // Given
+        Pageable pageable = PageRequest.of(0, 20);
         when(classSecurityService.requireMember(classId, student.getId())).thenReturn(studentMember);
-        when(assignmentRepository.findAllByClassIdOrderByCreatedAtDesc(classId))
-                .thenReturn(List.of(assignment));
+        when(assignmentRepository.findAllByClassIdOrderByCreatedAtDesc(classId, pageable))
+                .thenReturn(new PageImpl<>(List.of(assignment), pageable, 1));
         when(submissionRepository.findByAssignmentIdAndStudentId(assignment.getId(), student.getId()))
                 .thenReturn(Optional.of(SubmissionEntity.builder()
                         .grade((short) 85)
@@ -102,72 +107,77 @@ class AssignmentServiceTest {
                         .build()));
 
         // When
-        List<AssignmentDto> result = assignmentService.getAssignments(classId, student.getId());
+        Page<AssignmentDto> result = assignmentService.getAssignments(classId, student.getId(), pageable);
 
         // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).title()).isEqualTo("Homework 1");
-        assertThat(result.get(0).submissionStatus()).isEqualTo("GRADED");
-        assertThat(result.get(0).grade()).isEqualTo(85);
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).title()).isEqualTo("Homework 1");
+        assertThat(result.getContent().get(0).submissionStatus()).isEqualTo("GRADED");
+        assertThat(result.getContent().get(0).grade()).isEqualTo(85);
+        assertThat(result.getTotalElements()).isEqualTo(1);
     }
 
     @Test
     void should_returnSubmittedStatus_whenStudentSubmittedButNotGraded() {
         // Given
+        Pageable pageable = PageRequest.of(0, 20);
         when(classSecurityService.requireMember(classId, student.getId())).thenReturn(studentMember);
-        when(assignmentRepository.findAllByClassIdOrderByCreatedAtDesc(classId))
-                .thenReturn(List.of(assignment));
+        when(assignmentRepository.findAllByClassIdOrderByCreatedAtDesc(classId, pageable))
+                .thenReturn(new PageImpl<>(List.of(assignment), pageable, 1));
         when(submissionRepository.findByAssignmentIdAndStudentId(assignment.getId(), student.getId()))
                 .thenReturn(Optional.of(SubmissionEntity.builder()
                         .grade(null)
                         .submittedAt(Instant.now())
                         .build()));
 
-        List<AssignmentDto> result = assignmentService.getAssignments(classId, student.getId());
+        Page<AssignmentDto> result = assignmentService.getAssignments(classId, student.getId(), pageable);
 
-        assertThat(result.get(0).submissionStatus()).isEqualTo("SUBMITTED");
-        assertThat(result.get(0).grade()).isNull();
+        assertThat(result.getContent().get(0).submissionStatus()).isEqualTo("SUBMITTED");
+        assertThat(result.getContent().get(0).grade()).isNull();
     }
 
     @Test
     void should_returnAssignmentsWithNotSubmittedStatus_whenStudentHasNoSubmission() {
         // Given
+        Pageable pageable = PageRequest.of(0, 20);
         when(classSecurityService.requireMember(classId, student.getId())).thenReturn(studentMember);
-        when(assignmentRepository.findAllByClassIdOrderByCreatedAtDesc(classId))
-                .thenReturn(List.of(assignment));
+        when(assignmentRepository.findAllByClassIdOrderByCreatedAtDesc(classId, pageable))
+                .thenReturn(new PageImpl<>(List.of(assignment), pageable, 1));
         when(submissionRepository.findByAssignmentIdAndStudentId(assignment.getId(), student.getId()))
                 .thenReturn(Optional.empty());
 
         // When
-        List<AssignmentDto> result = assignmentService.getAssignments(classId, student.getId());
+        Page<AssignmentDto> result = assignmentService.getAssignments(classId, student.getId(), pageable);
 
         // Then
-        assertThat(result.get(0).submissionStatus()).isEqualTo("NOT_SUBMITTED");
-        assertThat(result.get(0).grade()).isNull();
+        assertThat(result.getContent().get(0).submissionStatus()).isEqualTo("NOT_SUBMITTED");
+        assertThat(result.getContent().get(0).grade()).isNull();
     }
 
     @Test
     void should_returnAssignmentsWithoutSubmissionStatus_whenTeacher() {
         // Given
+        Pageable pageable = PageRequest.of(0, 20);
         when(classSecurityService.requireMember(classId, teacher.getId())).thenReturn(teacherMember);
-        when(assignmentRepository.findAllByClassIdOrderByCreatedAtDesc(classId))
-                .thenReturn(List.of(assignment));
+        when(assignmentRepository.findAllByClassIdOrderByCreatedAtDesc(classId, pageable))
+                .thenReturn(new PageImpl<>(List.of(assignment), pageable, 1));
 
         // When
-        List<AssignmentDto> result = assignmentService.getAssignments(classId, teacher.getId());
+        Page<AssignmentDto> result = assignmentService.getAssignments(classId, teacher.getId(), pageable);
 
         // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).submissionStatus()).isNull();
-        assertThat(result.get(0).grade()).isNull();
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).submissionStatus()).isNull();
+        assertThat(result.getContent().get(0).grade()).isNull();
     }
 
     @Test
     void should_throwForbidden_whenNotMember_onGetAssignments() {
+        Pageable pageable = PageRequest.of(0, 20);
         when(classSecurityService.requireMember(classId, student.getId()))
                 .thenThrow(new ForbiddenException("Not a member"));
 
-        assertThatThrownBy(() -> assignmentService.getAssignments(classId, student.getId()))
+        assertThatThrownBy(() -> assignmentService.getAssignments(classId, student.getId(), pageable))
                 .isInstanceOf(ForbiddenException.class);
     }
 

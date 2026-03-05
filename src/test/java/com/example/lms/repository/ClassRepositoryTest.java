@@ -6,8 +6,8 @@ import com.example.lms.entity.Role;
 import com.example.lms.entity.UserEntity;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -60,11 +60,11 @@ class ClassRepositoryTest extends AbstractRepositoryTest {
 				.build());
 
 		// When
-		List<ClassEntity> classes = classRepository.findAllByMembersUserId(member.getId());
+		Page<ClassEntity> classes = classRepository.findAllByMembersUserId(member.getId(), PageRequest.of(0, 20));
 
 		// Then
-		assertThat(classes).hasSize(2);
-		assertThat(classes).extracting(ClassEntity::getName).containsExactlyInAnyOrder("Class One", "Class Two");
+		assertThat(classes.getContent()).hasSize(2);
+		assertThat(classes.getContent()).extracting(ClassEntity::getName).containsExactlyInAnyOrder("Class One", "Class Two");
 	}
 
 	@Test

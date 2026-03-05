@@ -67,12 +67,13 @@ class MemberControllerIT extends AbstractIntegrationTest {
 
         mockMvc.perform(get(BASE_URL + "/" + cls.getId() + "/members"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].userId").isNotEmpty())
-                .andExpect(jsonPath("$[0].firstName").isNotEmpty())
-                .andExpect(jsonPath("$[0].role").value("OWNER"))
-                .andExpect(jsonPath("$[1].role").value("STUDENT"));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].userId").isNotEmpty())
+                .andExpect(jsonPath("$.content[0].firstName").isNotEmpty())
+                .andExpect(jsonPath("$.content[0].role").value("OWNER"))
+                .andExpect(jsonPath("$.content[1].role").value("STUDENT"))
+                .andExpect(jsonPath("$.totalElements").value(2));
     }
 
     @Test

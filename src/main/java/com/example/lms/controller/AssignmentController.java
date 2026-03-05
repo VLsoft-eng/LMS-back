@@ -8,10 +8,11 @@ import com.example.lms.security.CurrentUser;
 import com.example.lms.service.AssignmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -22,9 +23,10 @@ public class AssignmentController {
     private final AssignmentService assignmentService;
 
     @GetMapping("/classes/{classId}/assignments")
-    public List<AssignmentDto> getAssignments(@PathVariable UUID classId,
-                                              @CurrentUser UserEntity currentUser) {
-        return assignmentService.getAssignments(classId, currentUser.getId());
+    public Page<AssignmentDto> getAssignments(@PathVariable UUID classId,
+                                              @CurrentUser UserEntity currentUser,
+                                              Pageable pageable) {
+        return assignmentService.getAssignments(classId, currentUser.getId(), pageable);
     }
 
     @PostMapping("/classes/{classId}/assignments")

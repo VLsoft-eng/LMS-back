@@ -1,9 +1,10 @@
 package com.example.lms.repository;
 
 import com.example.lms.entity.AssignmentEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -11,5 +12,5 @@ import java.util.UUID;
  */
 public interface AssignmentRepository extends JpaRepository<AssignmentEntity, UUID> {
 
-    List<AssignmentEntity> findAllByClassIdOrderByCreatedAtDesc(UUID classId);
+    Page<AssignmentEntity> findAllByClassIdOrderByCreatedAtDesc(UUID classId, Pageable pageable);
 }
