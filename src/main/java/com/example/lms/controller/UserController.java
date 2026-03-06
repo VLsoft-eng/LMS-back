@@ -5,6 +5,10 @@ import com.example.lms.dto.UserDto;
 import com.example.lms.entity.UserEntity;
 import com.example.lms.security.CurrentUser;
 import com.example.lms.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * TICKET-BE-06: REST endpoints for the authenticated user's own profile.
  */
+@Tag(name = "Пользователь", description = "Профиль текущего пользователя")
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
@@ -24,19 +29,22 @@ public class UserController {
 
     private final UserService userService;
 
-    /**
-     * GET /api/v1/users/me
-     * Returns the profile of the currently authenticated user.
-     */
+    @Operation(summary = "Получить профиль", description = "Возвращает профиль текущего аутентифицированного пользователя")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "401", description = "Требуется аутентификация")
+    })
     @GetMapping("/me")
     public ResponseEntity<UserDto> getMe(@CurrentUser UserEntity currentUser) {
         return ResponseEntity.ok(userService.getProfile(currentUser.getId()));
     }
 
-    /**
-     * PUT /api/v1/users/me
-     * Updates mutable profile fields. Email is read-only and cannot be changed here.
-     */
+    @Operation(summary = "Обновить профиль", description = "Обновляет поля профиля. Email неизменяем.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Профиль обновлён"),
+            @ApiResponse(responseCode = "400", description = "Ошибка валидации"),
+            @ApiResponse(responseCode = "401", description = "Требуется аутентификация")
+    })
     @PutMapping("/me")
     public ResponseEntity<UserDto> updateMe(@CurrentUser UserEntity currentUser,
                                             @Valid @RequestBody UpdateProfileRequest request) {
