@@ -37,10 +37,9 @@ public class SubmissionService {
             throw new ForbiddenException("Only STUDENT can submit assignments");
         }
 
-        String filePath = null;
-        if (file != null && !file.isEmpty()) {
-            filePath = fileStorageService.store(file);
-        }
+        final String filePath = (file != null && !file.isEmpty())
+                ? fileStorageService.store(file)
+                : null;
 
         SubmissionEntity submission = submissionRepository
                 .findByAssignmentIdAndStudentId(assignmentId, student.getId())
@@ -96,8 +95,9 @@ public class SubmissionService {
         SubmissionEntity submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Submission not found: " + submissionId));
 
-        AssignmentEntity assignment = assignmentRepository.findById(submission.getAssignmentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Assignment not found: " + submission.getAssignmentId()));
+        UUID assignmentId = submission.getAssignmentId();
+        AssignmentEntity assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assignment not found: " + assignmentId));
 
         classSecurityService.requireOwnerOrTeacher(assignment.getClassId(), currentUserId);
 
