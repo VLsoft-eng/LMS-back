@@ -106,6 +106,14 @@ public class ClassService {
     }
 
     @Transactional(readOnly = true)
+    public ClassDto getClass(UUID classId, UUID userId) {
+        ClassMemberEntity member = classSecurityService.requireMember(classId, userId);
+        ClassEntity cls = classRepository.findById(classId)
+                .orElseThrow(() -> new ResourceNotFoundException("Class not found: " + classId));
+        return toDto(cls, member);
+    }
+
+    @Transactional(readOnly = true)
     public String getClassCode(UUID classId, UUID userId) {
         classSecurityService.requireOwnerOrTeacher(classId, userId);
 

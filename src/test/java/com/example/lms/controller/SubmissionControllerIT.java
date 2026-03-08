@@ -8,7 +8,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.mock.web.MockPart;
 import org.springframework.security.test.context.support.WithMockUser;
+
+import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -76,11 +79,10 @@ class SubmissionControllerIT extends AbstractIntegrationTest {
     @Test
     @WithMockUser(username = STUDENT_EMAIL)
     void post_submissions_studentSubmitsText_returns201() throws Exception {
-        MockMultipartFile answerPart = new MockMultipartFile(
-                "answerText", "", "text/plain", "My answer".getBytes());
+        MockPart answerPart = new MockPart("answerText", "My answer".getBytes(StandardCharsets.UTF_8));
 
         mockMvc.perform(multipart("/api/v1/assignments/" + assignment.getId() + "/submissions")
-                        .file(answerPart))
+                        .part(answerPart))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.studentId").value(student.getId().toString()))
                 .andExpect(jsonPath("$.studentName").value("Student User"))
@@ -104,17 +106,15 @@ class SubmissionControllerIT extends AbstractIntegrationTest {
     @WithMockUser(username = STUDENT_EMAIL)
     void post_submissions_studentResubmits_upserts() throws Exception {
         // First submission
-        MockMultipartFile answer1 = new MockMultipartFile(
-                "answerText", "", "text/plain", "First answer".getBytes());
+        MockPart answer1 = new MockPart("answerText", "First answer".getBytes(StandardCharsets.UTF_8));
         mockMvc.perform(multipart("/api/v1/assignments/" + assignment.getId() + "/submissions")
-                        .file(answer1))
+                        .part(answer1))
                 .andExpect(status().isCreated());
 
         // Second submission (upsert)
-        MockMultipartFile answer2 = new MockMultipartFile(
-                "answerText", "", "text/plain", "Updated answer".getBytes());
+        MockPart answer2 = new MockPart("answerText", "Updated answer".getBytes(StandardCharsets.UTF_8));
         mockMvc.perform(multipart("/api/v1/assignments/" + assignment.getId() + "/submissions")
-                        .file(answer2))
+                        .part(answer2))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.answerText").value("Updated answer"));
 
@@ -124,11 +124,10 @@ class SubmissionControllerIT extends AbstractIntegrationTest {
     @Test
     @WithMockUser(username = TEACHER_EMAIL)
     void post_submissions_teacher_returns403() throws Exception {
-        MockMultipartFile answer = new MockMultipartFile(
-                "answerText", "", "text/plain", "answer".getBytes());
+        MockPart answer = new MockPart("answerText", "answer".getBytes(StandardCharsets.UTF_8));
 
         mockMvc.perform(multipart("/api/v1/assignments/" + assignment.getId() + "/submissions")
-                        .file(answer))
+                        .part(answer))
                 .andExpect(status().isForbidden());
     }
 
@@ -288,10 +287,9 @@ class SubmissionControllerIT extends AbstractIntegrationTest {
     @WithMockUser(username = STUDENT_EMAIL)
     void fullCycle_submitAndGrade() throws Exception {
         // Student submits
-        MockMultipartFile answer = new MockMultipartFile(
-                "answerText", "", "text/plain", "Full cycle answer".getBytes());
+        MockPart answer = new MockPart("answerText", "Full cycle answer".getBytes(StandardCharsets.UTF_8));
         String submitResponse = mockMvc.perform(multipart("/api/v1/assignments/" + assignment.getId() + "/submissions")
-                        .file(answer))
+                        .part(answer))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 
