@@ -52,6 +52,19 @@ public class ClassController {
         return classService.getMyClasses(currentUser.getId(), pageable);
     }
 
+    @Operation(summary = "Получить класс по ID", description = "Детали класса. Доступно только участникам.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(responseCode = "401", description = "Требуется аутентификация"),
+            @ApiResponse(responseCode = "403", description = "Нет доступа к классу"),
+            @ApiResponse(responseCode = "404", description = "Класс не найден")
+    })
+    @GetMapping("/{id}")
+    public ClassDto getClass(@PathVariable UUID id,
+                             @CurrentUser UserEntity currentUser) {
+        return classService.getClass(id, currentUser.getId());
+    }
+
     @Operation(summary = "Вступить в класс", description = "Вступление в класс по реферальному коду")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Успешно вступил"),

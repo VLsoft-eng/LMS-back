@@ -111,11 +111,11 @@ class MemberServiceTest {
         assertThat(result.getContent()).hasSize(3);
         assertThat(result.getContent().get(0).userId()).isEqualTo(owner.getId());
         assertThat(result.getContent().get(0).firstName()).isEqualTo("Owner");
-        assertThat(result.getContent().get(0).role()).isEqualTo("OWNER");
+        assertThat(result.getContent().get(0).role()).isEqualTo(Role.OWNER);
         assertThat(result.getContent().get(1).userId()).isEqualTo(teacher.getId());
-        assertThat(result.getContent().get(1).role()).isEqualTo("TEACHER");
+        assertThat(result.getContent().get(1).role()).isEqualTo(Role.TEACHER);
         assertThat(result.getContent().get(2).userId()).isEqualTo(student.getId());
-        assertThat(result.getContent().get(2).role()).isEqualTo("STUDENT");
+        assertThat(result.getContent().get(2).role()).isEqualTo(Role.STUDENT);
         assertThat(result.getTotalElements()).isEqualTo(3);
     }
 
@@ -149,12 +149,12 @@ class MemberServiceTest {
 
         // When
         MemberDto result = memberService.assignRole(classId, student.getId(),
-                new AssignRoleRequest("TEACHER"), owner.getId());
+                new AssignRoleRequest(Role.TEACHER), owner.getId());
 
         // Then
         verify(classMemberRepository).save(argThat(m ->
                 m.getUserId().equals(student.getId()) && m.getRole() == Role.TEACHER));
-        assertThat(result.role()).isEqualTo("TEACHER");
+        assertThat(result.role()).isEqualTo(Role.TEACHER);
     }
 
     @Test
@@ -165,7 +165,7 @@ class MemberServiceTest {
 
         // When / Then
         assertThatThrownBy(() -> memberService.assignRole(classId, teacher.getId(),
-                new AssignRoleRequest("STUDENT"), student.getId()))
+                new AssignRoleRequest(Role.STUDENT), student.getId()))
                 .isInstanceOf(ForbiddenException.class);
     }
 
@@ -178,7 +178,20 @@ class MemberServiceTest {
 
         // When / Then
         assertThatThrownBy(() -> memberService.assignRole(classId, owner.getId(),
-                new AssignRoleRequest("TEACHER"), owner.getId()))
+                new AssignRoleRequest(Role.TEACHER), owner.getId()))
+                .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void should_throwForbidden_whenAssigningOwnerRole() {
+        // Given
+        when(classSecurityService.requireOwner(classId, owner.getId())).thenReturn(ownerMember);
+        when(classMemberRepository.findByClassIdAndUserId(classId, student.getId()))
+                .thenReturn(Optional.of(studentMember));
+
+        // When / Then
+        assertThatThrownBy(() -> memberService.assignRole(classId, student.getId(),
+                new AssignRoleRequest(Role.OWNER), owner.getId()))
                 .isInstanceOf(ForbiddenException.class);
     }
 
@@ -191,7 +204,7 @@ class MemberServiceTest {
 
         // When / Then
         assertThatThrownBy(() -> memberService.assignRole(classId, student.getId(),
-                new AssignRoleRequest("TEACHER"), owner.getId()))
+                new AssignRoleRequest(Role.TEACHER), owner.getId()))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 }

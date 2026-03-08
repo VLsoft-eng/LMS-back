@@ -233,6 +233,78 @@ class ClassControllerIT extends AbstractIntegrationTest {
 
     @Test
     @WithMockUser(username = OWNER_EMAIL)
+    void getClass_member_returns200() throws Exception {
+        // Given
+        ClassEntity cls = classRepository.save(ClassEntity.builder()
+                .name("Algebra").code("ALGE0001").ownerId(owner.getId()).build());
+        classMemberRepository.save(ClassMemberEntity.builder()
+                .classId(cls.getId()).userId(owner.getId()).role(Role.OWNER).build());
+
+        // When / Then
+        mockMvc.perform(get(BASE_URL + "/" + cls.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(cls.getId().toString()))
+                .andExpect(jsonPath("$.name").value("Algebra"))
+                .andExpect(jsonPath("$.code").value("ALGE0001"))
+                .andExpect(jsonPath("$.myRole").value("OWNER"))
+                .andExpect(jsonPath("$.memberCount").value(1));
+    }
+
+    @Test
+    @WithMockUser(username = OTHER_EMAIL)
+    void getClass_studentMember_returns200() throws Exception {
+        // Given
+        ClassEntity cls = classRepository.save(ClassEntity.builder()
+                .name("Geometry").code("GEOM0001").ownerId(owner.getId()).build());
+        classMemberRepository.save(ClassMemberEntity.builder()
+                .classId(cls.getId()).userId(owner.getId()).role(Role.OWNER).build());
+        classMemberRepository.save(ClassMemberEntity.builder()
+                .classId(cls.getId()).userId(other.getId()).role(Role.STUDENT).build());
+
+        // When / Then
+        mockMvc.perform(get(BASE_URL + "/" + cls.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Geometry"))
+                .andExpect(jsonPath("$.myRole").value("STUDENT"))
+                .andExpect(jsonPath("$.memberCount").value(2));
+    }
+
+    @Test
+    @WithMockUser(username = OTHER_EMAIL)
+    void getClass_notMember_returns403() throws Exception {
+        // Given — only owner is member, other is not
+        ClassEntity cls = classRepository.save(ClassEntity.builder()
+                .name("Physics").code("PHYS0002").ownerId(owner.getId()).build());
+        classMemberRepository.save(ClassMemberEntity.builder()
+                .classId(cls.getId()).userId(owner.getId()).role(Role.OWNER).build());
+
+        // When / Then
+        mockMvc.perform(get(BASE_URL + "/" + cls.getId()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = OWNER_EMAIL)
+    void getClass_notFound_returns404() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/" + UUID.randomUUID()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getClass_unauthenticated_returns401() throws Exception {
+        // Given
+        ClassEntity cls = classRepository.save(ClassEntity.builder()
+                .name("Test").code("TEST0001").ownerId(owner.getId()).build());
+        classMemberRepository.save(ClassMemberEntity.builder()
+                .classId(cls.getId()).userId(owner.getId()).role(Role.OWNER).build());
+
+        // When / Then
+        mockMvc.perform(get(BASE_URL + "/" + cls.getId()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = OWNER_EMAIL)
     void getClassCode_ownerCanAccess_returns200() throws Exception {
         // Given
         ClassEntity cls = classRepository.save(ClassEntity.builder()
