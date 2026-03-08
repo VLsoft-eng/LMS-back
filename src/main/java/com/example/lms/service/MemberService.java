@@ -43,9 +43,11 @@ public class MemberService {
         if (member.getRole() == Role.OWNER) {
             throw new ForbiddenException("Cannot change OWNER role");
         }
+        if (request.role() == Role.OWNER) {
+            throw new ForbiddenException("Cannot assign OWNER role");
+        }
 
-        Role newRole = Role.valueOf(request.role());
-        member.setRole(newRole);
+        member.setRole(request.role());
         ClassMemberEntity saved = classMemberRepository.save(member);
 
         return toMemberDto(saved);
@@ -59,7 +61,7 @@ public class MemberService {
                 user.getFirstName(),
                 user.getLastName(),
                 user.getEmail(),
-                member.getRole().name(),
+                member.getRole(),
                 member.getJoinedAt()
         );
     }

@@ -1,11 +1,9 @@
 package com.example.lms.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
+import com.example.lms.entity.Role;
+import jakarta.validation.constraints.NotNull;
 
 public record AssignRoleRequest(
-
-        @NotBlank(message = "Role is required")
-        @Pattern(regexp = "TEACHER|STUDENT", message = "Role must be TEACHER or STUDENT")
-        String role
+        @NotNull(message = "Role is required")
+        Role role
 ) {}

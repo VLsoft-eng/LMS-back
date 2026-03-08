@@ -1,5 +1,7 @@
 package com.example.lms.dto;
 
+import com.example.lms.entity.Role;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -8,6 +10,6 @@ public record MemberDto(
         String firstName,
         String lastName,
         String email,
-        String role,
+        Role role,
         Instant joinedAt
 ) {}

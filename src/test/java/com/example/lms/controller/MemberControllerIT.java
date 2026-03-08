@@ -142,7 +142,7 @@ class MemberControllerIT extends AbstractIntegrationTest {
 
     @Test
     @WithMockUser(username = OWNER_EMAIL)
-    void putMemberRole_cannotAssignOwner_returns400() throws Exception {
+    void putMemberRole_cannotAssignOwner_returns403() throws Exception {
         classMemberRepository.save(ClassMemberEntity.builder()
                 .classId(cls.getId()).userId(other.getId()).role(Role.STUDENT)
                 .build());
@@ -150,7 +150,7 @@ class MemberControllerIT extends AbstractIntegrationTest {
         mockMvc.perform(put(BASE_URL + "/" + cls.getId() + "/members/" + other.getId() + "/role")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"role\":\"OWNER\"}"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -169,14 +169,14 @@ class MemberControllerIT extends AbstractIntegrationTest {
 
     @Test
     @WithMockUser(username = OWNER_EMAIL)
-    void putMemberRole_blankRole_returns400() throws Exception {
+    void putMemberRole_nullRole_returns400() throws Exception {
         classMemberRepository.save(ClassMemberEntity.builder()
                 .classId(cls.getId()).userId(other.getId()).role(Role.STUDENT)
                 .build());
 
         mockMvc.perform(put(BASE_URL + "/" + cls.getId() + "/members/" + other.getId() + "/role")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"role\":\"\"}"))
+                        .content("{}"))
                 .andExpect(status().isBadRequest());
     }
 }
