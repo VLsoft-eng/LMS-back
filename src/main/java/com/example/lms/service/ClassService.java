@@ -120,7 +120,7 @@ public class ClassService {
                 cls.getId(),
                 cls.getName(),
                 cls.getCode().trim(),
-                member.getRole().name(),
+                member.getRole(),
                 (int) count,
                 cls.getCreatedAt()
         );

@@ -94,7 +94,7 @@ class ClassServiceTest {
         verify(classMemberRepository).save(argThat(
                 m -> m.getRole() == Role.OWNER && m.getUserId().equals(user.getId())));
         assertThat(result.name()).isEqualTo("Math");
-        assertThat(result.myRole()).isEqualTo("OWNER");
+        assertThat(result.myRole()).isEqualTo(Role.OWNER);
         assertThat(result.memberCount()).isEqualTo(1);
     }
 
@@ -116,7 +116,7 @@ class ClassServiceTest {
         // Then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).name()).isEqualTo("Math");
-        assertThat(result.getContent().get(0).myRole()).isEqualTo("OWNER");
+        assertThat(result.getContent().get(0).myRole()).isEqualTo(Role.OWNER);
         assertThat(result.getContent().get(0).memberCount()).isEqualTo(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
     }
@@ -143,7 +143,7 @@ class ClassServiceTest {
         verify(classMemberRepository).save(argThat(
                 m -> m.getRole() == Role.STUDENT && m.getUserId().equals(student.getId())));
         assertThat(result.name()).isEqualTo("Math");
-        assertThat(result.myRole()).isEqualTo("STUDENT");
+        assertThat(result.myRole()).isEqualTo(Role.STUDENT);
     }
 
     @Test
@@ -186,7 +186,7 @@ class ClassServiceTest {
 
         // Then
         assertThat(result.name()).isEqualTo("New Name");
-        assertThat(result.myRole()).isEqualTo("OWNER");
+        assertThat(result.myRole()).isEqualTo(Role.OWNER);
     }
 
     @Test
@@ -249,6 +249,51 @@ class ClassServiceTest {
         // When / Then
         assertThatThrownBy(() -> classService.deleteClass(UUID.randomUUID(), user.getId()))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    // ─── getClass ──────────────────────────────────────────────────────────────
+
+    @Test
+    void should_returnClass_whenMember() {
+        // Given
+        when(classSecurityService.requireMember(cls.getId(), user.getId()))
+                .thenReturn(ownerMember);
+        when(classRepository.findById(cls.getId())).thenReturn(Optional.of(cls));
+        when(classMemberRepository.countByClassId(cls.getId())).thenReturn(1L);
+
+        // When
+        ClassDto result = classService.getClass(cls.getId(), user.getId());
+
+        // Then
+        assertThat(result.id()).isEqualTo(cls.getId());
+        assertThat(result.name()).isEqualTo("Math");
+        assertThat(result.code()).isEqualTo("MATH0001");
+        assertThat(result.myRole()).isEqualTo(Role.OWNER);
+        assertThat(result.memberCount()).isEqualTo(1);
+    }
+
+    @Test
+    void should_throw404_whenClassNotFound_onGetClass() {
+        // Given
+        UUID unknownId = UUID.randomUUID();
+        when(classSecurityService.requireMember(unknownId, user.getId()))
+                .thenThrow(new ResourceNotFoundException("Class not found: " + unknownId));
+
+        // When / Then
+        assertThatThrownBy(() -> classService.getClass(unknownId, user.getId()))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void should_throwForbidden_whenNotMember_onGetClass() {
+        // Given
+        UserEntity nonMember = UserEntity.builder().id(UUID.randomUUID()).build();
+        when(classSecurityService.requireMember(cls.getId(), nonMember.getId()))
+                .thenThrow(new ForbiddenException("Not a member of class: " + cls.getId()));
+
+        // When / Then
+        assertThatThrownBy(() -> classService.getClass(cls.getId(), nonMember.getId()))
+                .isInstanceOf(ForbiddenException.class);
     }
 
     // ─── getClassCode ─────────────────────────────────────────────────────────
