@@ -33,10 +33,10 @@ public class SubmissionController {
             @ApiResponse(responseCode = "403", description = "Только STUDENT может сдавать"),
             @ApiResponse(responseCode = "404", description = "Задание не найдено")
     })
-    @PostMapping("/assignments/{assignmentId}/submissions")
+    @PostMapping(value = "/assignments/{assignmentId}/submissions", consumes = "multipart/form-data")
     @ResponseStatus(HttpStatus.CREATED)
     public SubmissionDto submit(@PathVariable UUID assignmentId,
-                                @RequestParam(value = "answerText", required = false) String answerText,
+                                @RequestPart(value = "answerText", required = false) String answerText,
                                 @RequestParam(value = "file", required = false) MultipartFile file,
                                 @CurrentUser UserEntity currentUser) {
         return submissionService.submit(assignmentId, answerText, file, currentUser);
