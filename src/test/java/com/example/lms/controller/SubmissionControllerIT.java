@@ -281,12 +281,95 @@ class SubmissionControllerIT extends AbstractIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
+    // --- DELETE /api/v1/assignments/{id}/submissions/my ---
+
+    @Test
+    @WithMockUser(username = STUDENT_EMAIL)
+    void delete_mySubmission_returns204() throws Exception {
+        submissionRepository.save(SubmissionEntity.builder()
+                .assignmentId(assignment.getId())
+                .studentId(student.getId())
+                .answerText("To be cancelled")
+                .build());
+
+        mockMvc.perform(delete("/api/v1/assignments/" + assignment.getId() + "/submissions/my"))
+                .andExpect(status().isNoContent());
+
+        assertThat(submissionRepository.findByAssignmentIdAndStudentId(
+                assignment.getId(), student.getId())).isEmpty();
+    }
+
+    @Test
+    @WithMockUser(username = STUDENT_EMAIL)
+    void delete_mySubmission_noSubmission_returns404() throws Exception {
+        mockMvc.perform(delete("/api/v1/assignments/" + assignment.getId() + "/submissions/my"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(username = STUDENT_EMAIL)
+    void delete_mySubmission_graded_returns403() throws Exception {
+        submissionRepository.save(SubmissionEntity.builder()
+                .assignmentId(assignment.getId())
+                .studentId(student.getId())
+                .answerText("Answer")
+                .grade((short) 85)
+                .build());
+
+        mockMvc.perform(delete("/api/v1/assignments/" + assignment.getId() + "/submissions/my"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = TEACHER_EMAIL)
+    void delete_mySubmission_teacher_returns403() throws Exception {
+        mockMvc.perform(delete("/api/v1/assignments/" + assignment.getId() + "/submissions/my"))
+                .andExpect(status().isForbidden());
+    }
+
+    // --- Deadline enforcement ---
+
+    @Test
+    @WithMockUser(username = STUDENT_EMAIL)
+    void post_submissions_afterDeadline_returns403() throws Exception {
+        AssignmentEntity expired = assignmentRepository.save(AssignmentEntity.builder()
+                .classId(cls.getId())
+                .title("Expired HW")
+                .createdBy(teacher.getId())
+                .deadline(Instant.now().minusSeconds(3600))
+                .build());
+
+        MockPart answer = new MockPart("answerText", "Late".getBytes(StandardCharsets.UTF_8));
+        mockMvc.perform(multipart("/api/v1/assignments/" + expired.getId() + "/submissions")
+                        .part(answer))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = STUDENT_EMAIL)
+    void delete_mySubmission_afterDeadline_returns403() throws Exception {
+        AssignmentEntity expired = assignmentRepository.save(AssignmentEntity.builder()
+                .classId(cls.getId())
+                .title("Expired HW")
+                .createdBy(teacher.getId())
+                .deadline(Instant.now().minusSeconds(3600))
+                .build());
+
+        submissionRepository.save(SubmissionEntity.builder()
+                .assignmentId(expired.getId())
+                .studentId(student.getId())
+                .answerText("Answer")
+                .build());
+
+        mockMvc.perform(delete("/api/v1/assignments/" + expired.getId() + "/submissions/my"))
+                .andExpect(status().isForbidden());
+    }
+
     // --- Full cycle: submit → grade → check ---
 
     @Test
     @WithMockUser(username = STUDENT_EMAIL)
     void fullCycle_submitAndGrade() throws Exception {
-        // Student submits
         MockPart answer = new MockPart("answerText", "Full cycle answer".getBytes(StandardCharsets.UTF_8));
         String submitResponse = mockMvc.perform(multipart("/api/v1/assignments/" + assignment.getId() + "/submissions")
                         .part(answer))
@@ -294,9 +377,6 @@ class SubmissionControllerIT extends AbstractIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
 
         String submissionId = objectMapper.readTree(submitResponse).get("id").asText();
-
-        // Teacher grades (need to switch user context)
-        // This test verifies the student submission part; grading tested separately
         assertThat(submissionId).isNotEmpty();
     }
 }

@@ -108,6 +108,11 @@ public class SubmissionService {
         return toDto(submission);
     }
 
+    @Transactional
+    public void cancelSubmission(UUID assignmentId, UUID studentId) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
     private SubmissionDto toDto(SubmissionEntity entity) {
         UserEntity student = userRepository.findById(entity.getStudentId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + entity.getStudentId()));

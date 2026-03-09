@@ -46,6 +46,7 @@ public class AssignmentService {
                 .classId(classId)
                 .title(request.title())
                 .description(request.description())
+                .deadline(request.deadline())
                 .createdBy(currentUser.getId())
                 .build();
         entity = assignmentRepository.save(entity);
@@ -86,6 +87,7 @@ public class AssignmentService {
                 assignment.getDescription(),
                 assignment.getCreatedBy(),
                 createdByName,
+                assignment.getDeadline(),
                 assignment.getCreatedAt(),
                 submissionStatus,
                 grade
@@ -112,6 +114,7 @@ public class AssignmentService {
                 a.getId(),
                 a.getTitle(),
                 a.getDescription(),
+                a.getDeadline(),
                 a.getCreatedAt(),
                 submissionStatus,
                 grade

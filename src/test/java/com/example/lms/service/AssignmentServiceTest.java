@@ -190,7 +190,7 @@ class AssignmentServiceTest {
 
         // When
         AssignmentDto result = assignmentService.createAssignment(classId,
-                new CreateAssignmentRequest("Test Assignment", "Description"), teacher);
+                new CreateAssignmentRequest("Test Assignment", "Description", null), teacher);
 
         // Then
         verify(assignmentRepository).save(argThat(a ->
@@ -209,7 +209,7 @@ class AssignmentServiceTest {
         when(assignmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         AssignmentDto result = assignmentService.createAssignment(classId,
-                new CreateAssignmentRequest("Owner Assignment", null), owner);
+                new CreateAssignmentRequest("Owner Assignment", null, null), owner);
 
         assertThat(result.title()).isEqualTo("Owner Assignment");
         verify(assignmentRepository).save(any());
@@ -221,7 +221,7 @@ class AssignmentServiceTest {
                 .thenThrow(new ForbiddenException("OWNER or TEACHER required"));
 
         assertThatThrownBy(() -> assignmentService.createAssignment(classId,
-                new CreateAssignmentRequest("Title", null), student))
+                new CreateAssignmentRequest("Title", null, null), student))
                 .isInstanceOf(ForbiddenException.class);
     }
 

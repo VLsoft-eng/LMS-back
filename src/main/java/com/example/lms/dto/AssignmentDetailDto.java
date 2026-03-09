@@ -10,6 +10,7 @@ public record AssignmentDetailDto(
         String description,
         UUID createdBy,
         String createdByName,
+        Instant deadline,
         Instant createdAt,
         String submissionStatus,
         Integer grade

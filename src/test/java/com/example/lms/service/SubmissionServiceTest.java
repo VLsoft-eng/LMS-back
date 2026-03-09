@@ -322,4 +322,172 @@ class SubmissionServiceTest {
         assertThatThrownBy(() -> submissionService.grade(sub.getId(), new GradeRequest(50), student.getId()))
                 .isInstanceOf(ForbiddenException.class);
     }
+
+    // --- deadline ---
+
+    @Test
+    void should_throwForbidden_whenDeadlinePassed_onSubmit() {
+        // Given
+        AssignmentEntity expired = AssignmentEntity.builder()
+                .id(UUID.randomUUID())
+                .classId(classId)
+                .title("Expired HW")
+                .createdBy(teacher.getId())
+                .deadline(Instant.now().minusSeconds(3600))
+                .createdAt(Instant.now())
+                .build();
+
+        when(assignmentRepository.findById(expired.getId())).thenReturn(Optional.of(expired));
+        when(classSecurityService.requireMember(classId, student.getId())).thenReturn(studentMember);
+
+        // When / Then
+        assertThatThrownBy(() -> submissionService.submit(expired.getId(), "Late answer", null, student))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessageContaining("deadline");
+    }
+
+    @Test
+    void should_allowSubmit_whenNoDeadlineSet() {
+        // Given (assignment without deadline — default fixture)
+        when(assignmentRepository.findById(assignment.getId())).thenReturn(Optional.of(assignment));
+        when(classSecurityService.requireMember(classId, student.getId())).thenReturn(studentMember);
+        when(submissionRepository.findByAssignmentIdAndStudentId(assignment.getId(), student.getId()))
+                .thenReturn(Optional.empty());
+        when(submissionRepository.save(any())).thenAnswer(inv -> {
+            SubmissionEntity e = inv.getArgument(0);
+            e.setId(UUID.randomUUID());
+            return e;
+        });
+        when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
+
+        // When
+        SubmissionDto result = submissionService.submit(assignment.getId(), "Answer", null, student);
+
+        // Then
+        assertThat(result.answerText()).isEqualTo("Answer");
+    }
+
+    @Test
+    void should_allowSubmit_whenDeadlineNotYetPassed() {
+        // Given
+        AssignmentEntity future = AssignmentEntity.builder()
+                .id(UUID.randomUUID())
+                .classId(classId)
+                .title("Future HW")
+                .createdBy(teacher.getId())
+                .deadline(Instant.now().plusSeconds(86400))
+                .createdAt(Instant.now())
+                .build();
+
+        when(assignmentRepository.findById(future.getId())).thenReturn(Optional.of(future));
+        when(classSecurityService.requireMember(classId, student.getId())).thenReturn(studentMember);
+        when(submissionRepository.findByAssignmentIdAndStudentId(future.getId(), student.getId()))
+                .thenReturn(Optional.empty());
+        when(submissionRepository.save(any())).thenAnswer(inv -> {
+            SubmissionEntity e = inv.getArgument(0);
+            e.setId(UUID.randomUUID());
+            return e;
+        });
+        when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
+
+        // When
+        SubmissionDto result = submissionService.submit(future.getId(), "On-time answer", null, student);
+
+        // Then
+        assertThat(result.answerText()).isEqualTo("On-time answer");
+    }
+
+    // --- cancelSubmission ---
+
+    @Test
+    void should_cancelSubmission_whenStudentCancelsBeforeDeadline() {
+        // Given
+        SubmissionEntity sub = SubmissionEntity.builder()
+                .id(UUID.randomUUID())
+                .assignmentId(assignment.getId())
+                .studentId(student.getId())
+                .answerText("Answer")
+                .submittedAt(Instant.now())
+                .build();
+
+        when(assignmentRepository.findById(assignment.getId())).thenReturn(Optional.of(assignment));
+        when(classSecurityService.requireMember(classId, student.getId())).thenReturn(studentMember);
+        when(submissionRepository.findByAssignmentIdAndStudentId(assignment.getId(), student.getId()))
+                .thenReturn(Optional.of(sub));
+
+        // When
+        submissionService.cancelSubmission(assignment.getId(), student.getId());
+
+        // Then
+        verify(submissionRepository).delete(sub);
+    }
+
+    @Test
+    void should_throwForbidden_whenCancellingAfterDeadline() {
+        // Given
+        AssignmentEntity expired = AssignmentEntity.builder()
+                .id(UUID.randomUUID())
+                .classId(classId)
+                .title("Expired HW")
+                .createdBy(teacher.getId())
+                .deadline(Instant.now().minusSeconds(3600))
+                .createdAt(Instant.now())
+                .build();
+
+        when(assignmentRepository.findById(expired.getId())).thenReturn(Optional.of(expired));
+        when(classSecurityService.requireMember(classId, student.getId())).thenReturn(studentMember);
+
+        // When / Then
+        assertThatThrownBy(() -> submissionService.cancelSubmission(expired.getId(), student.getId()))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessageContaining("deadline");
+    }
+
+    @Test
+    void should_throwForbidden_whenCancellingGradedSubmission() {
+        // Given
+        SubmissionEntity graded = SubmissionEntity.builder()
+                .id(UUID.randomUUID())
+                .assignmentId(assignment.getId())
+                .studentId(student.getId())
+                .answerText("Answer")
+                .grade((short) 90)
+                .gradedAt(Instant.now())
+                .submittedAt(Instant.now())
+                .build();
+
+        when(assignmentRepository.findById(assignment.getId())).thenReturn(Optional.of(assignment));
+        when(classSecurityService.requireMember(classId, student.getId())).thenReturn(studentMember);
+        when(submissionRepository.findByAssignmentIdAndStudentId(assignment.getId(), student.getId()))
+                .thenReturn(Optional.of(graded));
+
+        // When / Then
+        assertThatThrownBy(() -> submissionService.cancelSubmission(assignment.getId(), student.getId()))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessageContaining("graded");
+    }
+
+    @Test
+    void should_throw404_whenCancellingNonExistentSubmission() {
+        // Given
+        when(assignmentRepository.findById(assignment.getId())).thenReturn(Optional.of(assignment));
+        when(classSecurityService.requireMember(classId, student.getId())).thenReturn(studentMember);
+        when(submissionRepository.findByAssignmentIdAndStudentId(assignment.getId(), student.getId()))
+                .thenReturn(Optional.empty());
+
+        // When / Then
+        assertThatThrownBy(() -> submissionService.cancelSubmission(assignment.getId(), student.getId()))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void should_throwForbidden_whenTeacherTriesToCancel() {
+        // Given
+        when(assignmentRepository.findById(assignment.getId())).thenReturn(Optional.of(assignment));
+        when(classSecurityService.requireMember(classId, teacher.getId())).thenReturn(teacherMember);
+
+        // When / Then
+        assertThatThrownBy(() -> submissionService.cancelSubmission(assignment.getId(), teacher.getId()))
+                .isInstanceOf(ForbiddenException.class);
+    }
 }

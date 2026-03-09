@@ -36,6 +36,9 @@ public class AssignmentEntity {
 	@Column(name = "created_by", nullable = false)
 	private UUID createdBy;
 
+	@Column(name = "deadline")
+	private Instant deadline;
+
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
