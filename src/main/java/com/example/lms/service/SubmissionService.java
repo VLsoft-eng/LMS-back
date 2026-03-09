@@ -37,6 +37,8 @@ public class SubmissionService {
             throw new ForbiddenException("Only STUDENT can submit assignments");
         }
 
+        requireBeforeDeadline(assignment);
+
         final String filePath = (file != null && !file.isEmpty())
                 ? fileStorageService.store(file)
                 : null;
@@ -110,7 +112,31 @@ public class SubmissionService {
 
     @Transactional
     public void cancelSubmission(UUID assignmentId, UUID studentId) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        AssignmentEntity assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assignment not found: " + assignmentId));
+
+        ClassMemberEntity member = classSecurityService.requireMember(assignment.getClassId(), studentId);
+        if (member.getRole() != Role.STUDENT) {
+            throw new ForbiddenException("Only STUDENT can cancel submissions");
+        }
+
+        requireBeforeDeadline(assignment);
+
+        SubmissionEntity submission = submissionRepository
+                .findByAssignmentIdAndStudentId(assignmentId, studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Submission not found"));
+
+        if (submission.getGrade() != null) {
+            throw new ForbiddenException("Cannot cancel an already graded submission");
+        }
+
+        submissionRepository.delete(submission);
+    }
+
+    private void requireBeforeDeadline(AssignmentEntity assignment) {
+        if (assignment.getDeadline() != null && Instant.now().isAfter(assignment.getDeadline())) {
+            throw new ForbiddenException("Assignment deadline has passed");
+        }
     }
 
     private SubmissionDto toDto(SubmissionEntity entity) {

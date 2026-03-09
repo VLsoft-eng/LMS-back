@@ -67,6 +67,20 @@ public class SubmissionController {
         return submissionService.getMySubmission(assignmentId, currentUser.getId());
     }
 
+    @Operation(summary = "Отменить отправку", description = "Студент отменяет свой ответ (до дедлайна, если не оценён)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Ответ отменён"),
+            @ApiResponse(responseCode = "401", description = "Требуется аутентификация"),
+            @ApiResponse(responseCode = "403", description = "Дедлайн прошёл / уже оценено / не STUDENT"),
+            @ApiResponse(responseCode = "404", description = "Ответ не найден")
+    })
+    @DeleteMapping("/assignments/{assignmentId}/submissions/my")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelSubmission(@PathVariable UUID assignmentId,
+                                  @CurrentUser UserEntity currentUser) {
+        submissionService.cancelSubmission(assignmentId, currentUser.getId());
+    }
+
     @Operation(summary = "Оценить ответ", description = "Выставление оценки 0-100 (OWNER/TEACHER)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Оценка выставлена"),
