@@ -15,13 +15,14 @@ import com.example.lms.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockPart;
 import org.springframework.security.test.context.support.WithMockUser;
 
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -154,9 +155,9 @@ class AssignmentControllerIT extends AbstractIntegrationTest {
     @Test
     @WithMockUser(username = OWNER_EMAIL)
     void postAssignment_ownerCreates_returns201() throws Exception {
-        mockMvc.perform(post(CLASSES_URL + "/" + cls.getId() + "/assignments")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"title\":\"New Assignment\",\"description\":\"Some desc\"}"))
+        mockMvc.perform(multipart(CLASSES_URL + "/" + cls.getId() + "/assignments")
+                        .part(new MockPart("title", "New Assignment".getBytes(StandardCharsets.UTF_8)))
+                        .part(new MockPart("description", "Some desc".getBytes(StandardCharsets.UTF_8))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.title").value("New Assignment"))
@@ -166,9 +167,8 @@ class AssignmentControllerIT extends AbstractIntegrationTest {
     @Test
     @WithMockUser(username = TEACHER_EMAIL)
     void postAssignment_teacherCreates_returns201() throws Exception {
-        mockMvc.perform(post(CLASSES_URL + "/" + cls.getId() + "/assignments")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"title\":\"Teacher Assignment\"}"))
+        mockMvc.perform(multipart(CLASSES_URL + "/" + cls.getId() + "/assignments")
+                        .part(new MockPart("title", "Teacher Assignment".getBytes(StandardCharsets.UTF_8))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.title").value("Teacher Assignment"));
     }
@@ -176,18 +176,16 @@ class AssignmentControllerIT extends AbstractIntegrationTest {
     @Test
     @WithMockUser(username = STUDENT_EMAIL)
     void postAssignment_student_returns403() throws Exception {
-        mockMvc.perform(post(CLASSES_URL + "/" + cls.getId() + "/assignments")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"title\":\"Forbidden\"}"))
+        mockMvc.perform(multipart(CLASSES_URL + "/" + cls.getId() + "/assignments")
+                        .part(new MockPart("title", "Forbidden".getBytes(StandardCharsets.UTF_8))))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     @WithMockUser(username = OWNER_EMAIL)
     void postAssignment_blankTitle_returns400() throws Exception {
-        mockMvc.perform(post(CLASSES_URL + "/" + cls.getId() + "/assignments")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"title\":\"\"}"))
+        mockMvc.perform(multipart(CLASSES_URL + "/" + cls.getId() + "/assignments")
+                        .part(new MockPart("title", "".getBytes(StandardCharsets.UTF_8))))
                 .andExpect(status().isBadRequest());
     }
 
