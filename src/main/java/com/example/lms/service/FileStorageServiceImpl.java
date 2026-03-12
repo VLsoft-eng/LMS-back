@@ -41,6 +41,22 @@ public class FileStorageServiceImpl {
         }
     }
 
+    public String storeWithExtension(MultipartFile file, String extension) {
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new IllegalArgumentException("File size exceeds maximum allowed (10MB)");
+        }
+
+        String filename = UUID.randomUUID() + extension;
+
+        try {
+            Path targetPath = storageRoot.resolve(filename).normalize();
+            Files.write(targetPath, file.getBytes());
+            return filename;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to store file: " + filename, e);
+        }
+    }
+
     public String storeBase64(String base64Data, String extension) {
         byte[] decoded = Base64.getDecoder().decode(base64Data);
         if (decoded.length > MAX_FILE_SIZE) {

@@ -34,6 +34,20 @@ public class MemberService {
     }
 
     @Transactional
+    public void removeMember(UUID classId, UUID memberUserId, UUID currentUserId) {
+        classSecurityService.requireOwner(classId, currentUserId);
+
+        ClassMemberEntity member = classMemberRepository.findByClassIdAndUserId(classId, memberUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found in class: " + memberUserId));
+
+        if (member.getRole() == Role.OWNER) {
+            throw new ForbiddenException("Cannot remove OWNER from class");
+        }
+
+        classMemberRepository.delete(member);
+    }
+
+    @Transactional
     public MemberDto assignRole(UUID classId, UUID memberUserId, AssignRoleRequest request, UUID currentUserId) {
         classSecurityService.requireOwner(classId, currentUserId);
 
@@ -62,7 +76,8 @@ public class MemberService {
                 user.getLastName(),
                 user.getEmail(),
                 member.getRole(),
-                member.getJoinedAt()
+                member.getJoinedAt(),
+                user.getAvatarUrl()
         );
     }
 }

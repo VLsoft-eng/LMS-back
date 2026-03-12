@@ -6,6 +6,7 @@ import com.example.lms.entity.UserEntity;
 import com.example.lms.security.CurrentUser;
 import com.example.lms.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,6 +38,8 @@ public class CommentController {
     @GetMapping("/assignments/{assignmentId}/comments")
     public Page<CommentDto> getComments(@PathVariable UUID assignmentId,
                                         @CurrentUser UserEntity currentUser,
+                                        @PageableDefault(size = 50, sort = "createdAt")
+                                        @Parameter(description = "Пагинация: page (с 0), size, sort (поле,asc|desc)", example = "page=0&size=50")
                                         Pageable pageable) {
         return commentService.getComments(assignmentId, currentUser.getId(), pageable);
     }

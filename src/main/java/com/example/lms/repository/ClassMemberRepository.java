@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,4 +19,6 @@ public interface ClassMemberRepository extends JpaRepository<ClassMemberEntity, 
 	Page<ClassMemberEntity> findAllByClassIdOrderByJoinedAtAsc(UUID classId, Pageable pageable);
 
 	long countByClassId(UUID classId);
+
+	List<ClassMemberEntity> findAllByClassId(UUID classId);
 }

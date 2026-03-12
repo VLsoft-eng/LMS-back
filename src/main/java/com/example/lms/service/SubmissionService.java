@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,7 +29,7 @@ public class SubmissionService {
     private final FileStorageServiceImpl fileStorageService;
 
     @Transactional
-    public SubmissionDto submit(UUID assignmentId, String answerText, MultipartFile file, UserEntity student) {
+    public SubmissionDto submit(UUID assignmentId, String answerText, List<MultipartFile> files, UserEntity student) {
         AssignmentEntity assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assignment not found: " + assignmentId));
 
@@ -39,16 +40,21 @@ public class SubmissionService {
 
         requireBeforeDeadline(assignment);
 
-        final String filePath = (file != null && !file.isEmpty())
-                ? fileStorageService.store(file)
-                : null;
+        List<String> newFilePaths = new ArrayList<>();
+        if (files != null) {
+            for (MultipartFile file : files) {
+                if (file != null && !file.isEmpty()) {
+                    newFilePaths.add(fileStorageService.store(file));
+                }
+            }
+        }
 
         SubmissionEntity submission = submissionRepository
                 .findByAssignmentIdAndStudentId(assignmentId, student.getId())
                 .map(existing -> {
                     existing.setAnswerText(answerText);
-                    if (filePath != null) {
-                        existing.setFilePath(filePath);
+                    if (!newFilePaths.isEmpty()) {
+                        existing.setFilePaths(newFilePaths);
                     }
                     existing.setSubmittedAt(Instant.now());
                     existing.setGrade(null);
@@ -59,7 +65,7 @@ public class SubmissionService {
                         .assignmentId(assignmentId)
                         .studentId(student.getId())
                         .answerText(answerText)
-                        .filePath(filePath)
+                        .filePaths(newFilePaths)
                         .build());
 
         submission = submissionRepository.save(submission);
@@ -143,16 +149,17 @@ public class SubmissionService {
         UserEntity student = userRepository.findById(entity.getStudentId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + entity.getStudentId()));
 
-        String fileUrl = entity.getFilePath() != null
-                ? "/api/v1/files/" + entity.getFilePath()
-                : null;
+        List<String> fileUrls = entity.getFilePaths().stream()
+                .map(p -> "/api/v1/files/" + p)
+                .toList();
 
         return new SubmissionDto(
                 entity.getId(),
                 entity.getStudentId(),
                 student.getFirstName() + " " + student.getLastName(),
+                student.getAvatarUrl(),
                 entity.getAnswerText(),
-                fileUrl,
+                fileUrls,
                 entity.getGrade() != null ? entity.getGrade().intValue() : null,
                 entity.getSubmittedAt()
         );

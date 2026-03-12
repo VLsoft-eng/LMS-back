@@ -37,9 +37,9 @@ public class SubmissionController {
     @ResponseStatus(HttpStatus.CREATED)
     public SubmissionDto submit(@PathVariable UUID assignmentId,
                                 @RequestPart(value = "answerText", required = false) String answerText,
-                                @RequestParam(value = "file", required = false) MultipartFile file,
+                                @RequestParam(value = "files", required = false) List<MultipartFile> files,
                                 @CurrentUser UserEntity currentUser) {
-        return submissionService.submit(assignmentId, answerText, file, currentUser);
+        return submissionService.submit(assignmentId, answerText, files, currentUser);
     }
 
     @Operation(summary = "Все ответы", description = "Просмотр всех ответов на задание (OWNER/TEACHER)")

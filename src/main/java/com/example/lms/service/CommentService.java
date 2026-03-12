@@ -56,6 +56,7 @@ public class CommentService {
                 entity.getAssignmentId(),
                 entity.getAuthorId(),
                 currentUser.getFirstName() + " " + currentUser.getLastName(),
+                currentUser.getAvatarUrl(),
                 entity.getText(),
                 entity.getCreatedAt()
         );
@@ -69,6 +70,7 @@ public class CommentService {
                 comment.getAssignmentId(),
                 comment.getAuthorId(),
                 author.getFirstName() + " " + author.getLastName(),
+                author.getAvatarUrl(),
                 comment.getText(),
                 comment.getCreatedAt()
         );

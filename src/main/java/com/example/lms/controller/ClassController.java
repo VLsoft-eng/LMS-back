@@ -8,6 +8,7 @@ import com.example.lms.entity.UserEntity;
 import com.example.lms.security.CurrentUser;
 import com.example.lms.service.ClassService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,6 +16,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,7 +50,10 @@ public class ClassController {
             @ApiResponse(responseCode = "401", description = "Требуется аутентификация")
     })
     @GetMapping
-    public Page<ClassDto> getMyClasses(@CurrentUser UserEntity currentUser, Pageable pageable) {
+    public Page<ClassDto> getMyClasses(@CurrentUser UserEntity currentUser,
+                                       @PageableDefault(size = 20, sort = "createdAt")
+                                       @Parameter(description = "Пагинация: page (с 0), size, sort (поле,asc|desc)", example = "page=0&size=20")
+                                       Pageable pageable) {
         return classService.getMyClasses(currentUser.getId(), pageable);
     }
 
@@ -118,5 +123,18 @@ public class ClassController {
     public Map<String, String> getClassCode(@PathVariable UUID id,
                                             @CurrentUser UserEntity currentUser) {
         return Map.of("code", classService.getClassCode(id, currentUser.getId()));
+    }
+
+    @Operation(summary = "Обновить код класса", description = "Генерирует новый код приглашения. OWNER и TEACHER.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Новый код сгенерирован"),
+            @ApiResponse(responseCode = "401", description = "Требуется аутентификация"),
+            @ApiResponse(responseCode = "403", description = "Только OWNER/TEACHER"),
+            @ApiResponse(responseCode = "404", description = "Класс не найден")
+    })
+    @PostMapping("/{id}/code/regenerate")
+    public ClassDto regenerateCode(@PathVariable UUID id,
+                                   @CurrentUser UserEntity currentUser) {
+        return classService.regenerateCode(id, currentUser.getId());
     }
 }

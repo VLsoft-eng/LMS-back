@@ -122,6 +122,18 @@ public class ClassService {
         return cls.getCode().trim();
     }
 
+    @Transactional
+    public ClassDto regenerateCode(UUID classId, UUID userId) {
+        ClassMemberEntity member = classSecurityService.requireOwnerOrTeacher(classId, userId);
+
+        ClassEntity cls = classRepository.findById(classId)
+                .orElseThrow(() -> new ResourceNotFoundException("Class not found: " + classId));
+        cls.setCode(generateUniqueCode());
+        cls = classRepository.save(cls);
+
+        return toDto(cls, member);
+    }
+
     private ClassDto toDto(ClassEntity cls, ClassMemberEntity member) {
         long count = classMemberRepository.countByClassId(cls.getId());
         return new ClassDto(

@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -33,8 +35,9 @@ public class SubmissionEntity {
 	@Column(name = "answer_text", columnDefinition = "TEXT")
 	private String answerText;
 
-	@Column(name = "file_path", length = 500)
-	private String filePath;
+	@Column(name = "file_paths", columnDefinition = "TEXT[]")
+	@org.hibernate.annotations.Array(length = 50)
+	private List<String> filePaths = new ArrayList<>();
 
 	@Column(name = "grade")
 	private Short grade;

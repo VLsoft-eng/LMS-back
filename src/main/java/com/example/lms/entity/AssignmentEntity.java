@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -38,6 +40,10 @@ public class AssignmentEntity {
 
 	@Column(name = "deadline")
 	private Instant deadline;
+
+	@Column(name = "file_paths", columnDefinition = "TEXT[]")
+	@org.hibernate.annotations.Array(length = 50)
+	private List<String> filePaths = new ArrayList<>();
 
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;

@@ -2,7 +2,6 @@ package com.example.lms.service;
 
 import com.example.lms.dto.AssignmentDetailDto;
 import com.example.lms.dto.AssignmentDto;
-import com.example.lms.dto.CreateAssignmentRequest;
 import com.example.lms.entity.AssignmentEntity;
 import com.example.lms.entity.ClassMemberEntity;
 import com.example.lms.entity.Role;
@@ -17,7 +16,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,10 +28,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AssignmentService {
 
-    private final AssignmentRepository assignmentRepository;
-    private final SubmissionRepository submissionRepository;
-    private final UserRepository       userRepository;
-    private final ClassSecurityService classSecurityService;
+    private final AssignmentRepository  assignmentRepository;
+    private final SubmissionRepository  submissionRepository;
+    private final UserRepository        userRepository;
+    private final ClassSecurityService  classSecurityService;
+    private final FileStorageServiceImpl fileStorageService;
 
     @Transactional(readOnly = true)
     public Page<AssignmentDto> getAssignments(UUID classId, UUID currentUserId, Pageable pageable) {
@@ -39,15 +43,27 @@ public class AssignmentService {
     }
 
     @Transactional
-    public AssignmentDto createAssignment(UUID classId, CreateAssignmentRequest request, UserEntity currentUser) {
+    public AssignmentDto createAssignment(UUID classId, String title, String description,
+                                          Instant deadline, List<MultipartFile> files,
+                                          UserEntity currentUser) {
         classSecurityService.requireOwnerOrTeacher(classId, currentUser.getId());
+
+        List<String> filePaths = new ArrayList<>();
+        if (files != null) {
+            for (MultipartFile file : files) {
+                if (file != null && !file.isEmpty()) {
+                    filePaths.add(fileStorageService.store(file));
+                }
+            }
+        }
 
         AssignmentEntity entity = AssignmentEntity.builder()
                 .classId(classId)
-                .title(request.title())
-                .description(request.description())
-                .deadline(request.deadline())
+                .title(title)
+                .description(description)
+                .deadline(deadline)
                 .createdBy(currentUser.getId())
+                .filePaths(filePaths)
                 .build();
         entity = assignmentRepository.save(entity);
 
@@ -80,6 +96,10 @@ public class AssignmentService {
             }
         }
 
+        List<String> fileUrls = assignment.getFilePaths().stream()
+                .map(p -> "/api/v1/files/" + p)
+                .toList();
+
         return new AssignmentDetailDto(
                 assignment.getId(),
                 assignment.getClassId(),
@@ -90,7 +110,8 @@ public class AssignmentService {
                 assignment.getDeadline(),
                 assignment.getCreatedAt(),
                 submissionStatus,
-                grade
+                grade,
+                fileUrls
         );
     }
 
@@ -110,6 +131,10 @@ public class AssignmentService {
             }
         }
 
+        List<String> fileUrls = a.getFilePaths().stream()
+                .map(p -> "/api/v1/files/" + p)
+                .toList();
+
         return new AssignmentDto(
                 a.getId(),
                 a.getTitle(),
@@ -117,7 +142,8 @@ public class AssignmentService {
                 a.getDeadline(),
                 a.getCreatedAt(),
                 submissionStatus,
-                grade
+                grade,
+                fileUrls
         );
     }
 }

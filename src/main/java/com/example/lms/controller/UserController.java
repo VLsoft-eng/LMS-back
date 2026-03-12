@@ -11,12 +11,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * TICKET-BE-06: REST endpoints for the authenticated user's own profile.
@@ -49,5 +53,17 @@ public class UserController {
     public ResponseEntity<UserDto> updateMe(@CurrentUser UserEntity currentUser,
                                             @Valid @RequestBody UpdateProfileRequest request) {
         return ResponseEntity.ok(userService.updateProfile(currentUser.getId(), request));
+    }
+
+    @Operation(summary = "Загрузить аватарку", description = "Загружает изображение как аватарку пользователя")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Аватарка обновлена"),
+            @ApiResponse(responseCode = "400", description = "Некорректный файл"),
+            @ApiResponse(responseCode = "401", description = "Требуется аутентификация")
+    })
+    @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserDto> uploadAvatar(@CurrentUser UserEntity currentUser,
+                                                @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(userService.uploadAvatar(currentUser.getId(), file));
     }
 }
