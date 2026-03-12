@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -96,7 +97,7 @@ public class AssignmentService {
             }
         }
 
-        List<String> fileUrls = assignment.getFilePaths().stream()
+        List<String> fileUrls = Objects.requireNonNullElse(assignment.getFilePaths(), List.<String>of()).stream()
                 .map(p -> "/api/v1/files/" + p)
                 .toList();
 
@@ -131,7 +132,7 @@ public class AssignmentService {
             }
         }
 
-        List<String> fileUrls = a.getFilePaths().stream()
+        List<String> fileUrls = Objects.requireNonNullElse(a.getFilePaths(), List.<String>of()).stream()
                 .map(p -> "/api/v1/files/" + p)
                 .toList();
 

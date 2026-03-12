@@ -95,12 +95,13 @@ class SubmissionControllerIT extends AbstractIntegrationTest {
     @WithMockUser(username = STUDENT_EMAIL)
     void post_submissions_studentSubmitsFile_returns201() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
-                "file", "homework.pdf", "application/pdf", "pdf-content".getBytes());
+                "files", "homework.pdf", "application/pdf", "pdf-content".getBytes());
 
         mockMvc.perform(multipart("/api/v1/assignments/" + assignment.getId() + "/submissions")
                         .file(file))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.fileUrl").isNotEmpty());
+                .andExpect(jsonPath("$.fileUrls").isArray())
+                .andExpect(jsonPath("$.fileUrls.length()").value(1));
     }
 
     @Test

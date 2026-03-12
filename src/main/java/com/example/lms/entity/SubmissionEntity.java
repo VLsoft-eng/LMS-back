@@ -37,6 +37,7 @@ public class SubmissionEntity {
 
 	@Column(name = "file_paths", columnDefinition = "TEXT[]")
 	@org.hibernate.annotations.Array(length = 50)
+	@lombok.Builder.Default
 	private List<String> filePaths = new ArrayList<>();
 
 	@Column(name = "grade")
