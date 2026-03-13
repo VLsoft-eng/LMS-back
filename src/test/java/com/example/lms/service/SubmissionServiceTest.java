@@ -155,10 +155,10 @@ class SubmissionServiceTest {
         when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
 
         // When
-        SubmissionDto result = submissionService.submit(assignment.getId(), null, file, student);
+        SubmissionDto result = submissionService.submit(assignment.getId(), null, List.of(file), student);
 
         // Then
-        assertThat(result.fileUrl()).isEqualTo("/api/v1/files/uuid-file.pdf");
+        assertThat(result.fileUrls()).containsExactly("/api/v1/files/uuid-file.pdf");
         verify(fileStorageService).store(file);
     }
 

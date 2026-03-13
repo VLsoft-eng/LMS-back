@@ -2,7 +2,6 @@ package com.example.lms.service;
 
 import com.example.lms.dto.AssignmentDto;
 import com.example.lms.dto.AssignmentDetailDto;
-import com.example.lms.dto.CreateAssignmentRequest;
 import com.example.lms.entity.AssignmentEntity;
 import com.example.lms.entity.ClassMemberEntity;
 import com.example.lms.entity.Role;
@@ -39,10 +38,11 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class AssignmentServiceTest {
 
-    @Mock private AssignmentRepository  assignmentRepository;
-    @Mock private SubmissionRepository  submissionRepository;
-    @Mock private UserRepository        userRepository;
-    @Mock private ClassSecurityService  classSecurityService;
+    @Mock private AssignmentRepository   assignmentRepository;
+    @Mock private SubmissionRepository   submissionRepository;
+    @Mock private UserRepository         userRepository;
+    @Mock private ClassSecurityService   classSecurityService;
+    @Mock private com.example.lms.service.FileStorageServiceImpl fileStorageService;
     @InjectMocks private AssignmentService assignmentService;
 
     private UUID            classId;
@@ -190,7 +190,7 @@ class AssignmentServiceTest {
 
         // When
         AssignmentDto result = assignmentService.createAssignment(classId,
-                new CreateAssignmentRequest("Test Assignment", "Description", null), teacher);
+                "Test Assignment", "Description", null, null, teacher);
 
         // Then
         verify(assignmentRepository).save(argThat(a ->
@@ -209,7 +209,7 @@ class AssignmentServiceTest {
         when(assignmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         AssignmentDto result = assignmentService.createAssignment(classId,
-                new CreateAssignmentRequest("Owner Assignment", null, null), owner);
+                "Owner Assignment", null, null, null, owner);
 
         assertThat(result.title()).isEqualTo("Owner Assignment");
         verify(assignmentRepository).save(any());
@@ -221,7 +221,7 @@ class AssignmentServiceTest {
                 .thenThrow(new ForbiddenException("OWNER or TEACHER required"));
 
         assertThatThrownBy(() -> assignmentService.createAssignment(classId,
-                new CreateAssignmentRequest("Title", null, null), student))
+                "Title", null, null, null, student))
                 .isInstanceOf(ForbiddenException.class);
     }
 

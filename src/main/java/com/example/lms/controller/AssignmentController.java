@@ -54,14 +54,17 @@ public class AssignmentController {
             @ApiResponse(responseCode = "403", description = "Только OWNER/TEACHER могут создавать задания"),
             @ApiResponse(responseCode = "404", description = "Класс не найден")
     })
-    @PostMapping(value = "/classes/{classId}/assignments", consumes = {"multipart/form-data", "application/json"})
+    @PostMapping(value = "/classes/{classId}/assignments", consumes = "multipart/form-data")
     @ResponseStatus(HttpStatus.CREATED)
     public AssignmentDto createAssignment(@PathVariable UUID classId,
-                                         @RequestPart("title") String title,
+                                         @RequestPart(value = "title", required = false) String title,
                                          @RequestPart(value = "description", required = false) String description,
                                          @RequestPart(value = "deadline", required = false) String deadline,
                                          @RequestParam(value = "files", required = false) List<MultipartFile> files,
                                          @CurrentUser UserEntity currentUser) {
+        if (title == null || title.isBlank()) {
+            throw new IllegalArgumentException("Title is required");
+        }
         Instant deadlineInstant = (deadline != null && !deadline.isBlank())
                 ? Instant.parse(deadline)
                 : null;
