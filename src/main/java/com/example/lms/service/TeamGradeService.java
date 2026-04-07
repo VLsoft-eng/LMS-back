@@ -105,7 +105,7 @@ public class TeamGradeService {
 
         grade.setGrade(request.grade().shortValue());
         grade.setComment(request.comment());
-        grade = teamGradeRepository.save(grade);
+        TeamGradeEntity savedGrade = teamGradeRepository.save(grade);
 
         List<IndividualGradeAdjustmentEntity> adjustments = adjustmentRepository.findAllByTeamGradeId(teamGradeId);
         for (IndividualGradeAdjustmentEntity adj : adjustments) {
@@ -114,11 +114,11 @@ public class TeamGradeService {
             adjustmentRepository.save(adj);
         }
 
-        TeamEntity team = teamRepository.findById(grade.getTeamId())
-                .orElseThrow(() -> new ResourceNotFoundException("Team not found: " + grade.getTeamId()));
+        TeamEntity team = teamRepository.findById(savedGrade.getTeamId())
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found: " + savedGrade.getTeamId()));
 
         adjustments = adjustmentRepository.findAllByTeamGradeId(teamGradeId);
-        return toTeamGradeDto(grade, team.getName(), adjustments);
+        return toTeamGradeDto(savedGrade, team.getName(), adjustments);
     }
 
     @Transactional
