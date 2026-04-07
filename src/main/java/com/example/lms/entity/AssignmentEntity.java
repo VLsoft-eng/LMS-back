@@ -41,6 +41,14 @@ public class AssignmentEntity {
 	@Column(name = "deadline")
 	private Instant deadline;
 
+	@Column(nullable = false, length = 20)
+	@Builder.Default
+	private String type = "STANDARD";
+
+	@Column(name = "is_team_based", nullable = false)
+	@Builder.Default
+	private boolean isTeamBased = false;
+
 	@Column(name = "file_paths", columnDefinition = "TEXT[]")
 	@org.hibernate.annotations.Array(length = 50)
 	@lombok.Builder.Default

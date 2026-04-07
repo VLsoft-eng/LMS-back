@@ -20,6 +20,12 @@ public record AssignmentDto(
         @Schema(description = "Дедлайн (UTC). null — без дедлайна.", nullable = true)
         Instant deadline,
 
+        @Schema(description = "Тип задания", example = "STANDARD", allowableValues = {"STANDARD", "QUICK"})
+        String type,
+
+        @Schema(description = "Задание для команд")
+        boolean isTeamBased,
+
         @Schema(description = "Дата создания задания")
         Instant createdAt,
 
