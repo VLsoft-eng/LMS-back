@@ -1,5 +1,6 @@
 package com.example.lms.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
@@ -20,6 +21,7 @@ public record QuickAssignmentDto(
         @Schema(description = "Тип задания")
         String type,
 
+        @JsonProperty("isTeamBased")
         @Schema(description = "Командное задание")
         boolean isTeamBased,
 

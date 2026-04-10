@@ -5,9 +5,7 @@ import com.example.lms.dto.SubmissionDto;
 import com.example.lms.entity.*;
 import com.example.lms.exception.ForbiddenException;
 import com.example.lms.exception.ResourceNotFoundException;
-import com.example.lms.repository.AssignmentRepository;
-import com.example.lms.repository.SubmissionRepository;
-import com.example.lms.repository.UserRepository;
+import com.example.lms.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -27,6 +26,8 @@ public class SubmissionService {
     private final UserRepository userRepository;
     private final ClassSecurityService classSecurityService;
     private final FileStorageServiceImpl fileStorageService;
+    private final TeamMemberRepository teamMemberRepository;
+    private final TeamRepository teamRepository;
 
     @Transactional
     public SubmissionDto submit(UUID assignmentId, String answerText, List<MultipartFile> files, UserEntity student) {
@@ -80,7 +81,7 @@ public class SubmissionService {
         classSecurityService.requireOwnerOrTeacher(assignment.getClassId(), currentUserId);
 
         return submissionRepository.findAllByAssignmentId(assignmentId).stream()
-                .map(this::toDto)
+                .map(s -> toDto(s, assignment))
                 .toList();
     }
 
@@ -146,12 +147,29 @@ public class SubmissionService {
     }
 
     private SubmissionDto toDto(SubmissionEntity entity) {
+        return toDto(entity, null);
+    }
+
+    private SubmissionDto toDto(SubmissionEntity entity, AssignmentEntity assignment) {
         UserEntity student = userRepository.findById(entity.getStudentId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + entity.getStudentId()));
 
         List<String> fileUrls = entity.getFilePaths().stream()
                 .map(p -> "/api/v1/files/" + p)
                 .toList();
+
+        String teamName = null;
+        if (assignment != null && assignment.isTeamBased()) {
+            teamName = teamMemberRepository.findAllByUserId(entity.getStudentId()).stream()
+                    .map(m -> teamRepository.findById(m.getTeamId()))
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .filter(t -> t.getClassId().equals(assignment.getClassId()))
+                    .filter(t -> t.getAssignmentId() == null || t.getAssignmentId().equals(assignment.getId()))
+                    .map(TeamEntity::getName)
+                    .findFirst()
+                    .orElse(null);
+        }
 
         return new SubmissionDto(
                 entity.getId(),
@@ -161,7 +179,8 @@ public class SubmissionService {
                 entity.getAnswerText(),
                 fileUrls,
                 entity.getGrade() != null ? entity.getGrade().intValue() : null,
-                entity.getSubmittedAt()
+                entity.getSubmittedAt(),
+                teamName
         );
     }
 }

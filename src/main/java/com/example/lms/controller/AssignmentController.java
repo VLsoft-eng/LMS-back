@@ -57,9 +57,10 @@ public class AssignmentController {
     @PostMapping(value = "/classes/{classId}/assignments", consumes = "multipart/form-data")
     @ResponseStatus(HttpStatus.CREATED)
     public AssignmentDto createAssignment(@PathVariable UUID classId,
-                                         @RequestPart(value = "title", required = false) String title,
-                                         @RequestPart(value = "description", required = false) String description,
-                                         @RequestPart(value = "deadline", required = false) String deadline,
+                                         @RequestParam(value = "title", required = false) String title,
+                                         @RequestParam(value = "description", required = false) String description,
+                                         @RequestParam(value = "deadline", required = false) String deadline,
+                                         @RequestParam(value = "isTeamBased", required = false, defaultValue = "false") boolean isTeamBased,
                                          @RequestParam(value = "files", required = false) List<MultipartFile> files,
                                          @CurrentUser UserEntity currentUser) {
         if (title == null || title.isBlank()) {
@@ -70,7 +71,7 @@ public class AssignmentController {
                 : null;
         return assignmentService.createAssignment(classId, title,
                 description != null ? description : "",
-                deadlineInstant, files, currentUser);
+                deadlineInstant, isTeamBased, files, currentUser);
     }
 
     @Operation(summary = "Получить задание", description = "Детали задания по ID")

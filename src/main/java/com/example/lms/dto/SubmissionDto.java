@@ -30,5 +30,8 @@ public record SubmissionDto(
         Integer grade,
 
         @Schema(description = "Дата и время сдачи ответа")
-        Instant submittedAt
+        Instant submittedAt,
+
+        @Schema(description = "Название команды (только для командных заданий)", nullable = true)
+        String teamName
 ) {}

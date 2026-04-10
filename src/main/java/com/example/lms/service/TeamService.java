@@ -42,12 +42,17 @@ public class TeamService {
                 .build();
         team = teamRepository.save(team);
 
+        List<UUID> memberIds = new ArrayList<>(request.memberUserIds());
+        UUID effectiveLeaderId = request.leaderUserId() != null
+                ? request.leaderUserId()
+                : memberIds.isEmpty() ? null : memberIds.get(new Random().nextInt(memberIds.size()));
+
         List<TeamMemberEntity> members = new ArrayList<>();
-        for (UUID userId : request.memberUserIds()) {
+        for (UUID userId : memberIds) {
             TeamMemberEntity member = TeamMemberEntity.builder()
                     .teamId(team.getId())
                     .userId(userId)
-                    .isLeader(userId.equals(request.leaderUserId()))
+                    .isLeader(userId.equals(effectiveLeaderId))
                     .build();
             members.add(teamMemberRepository.save(member));
         }

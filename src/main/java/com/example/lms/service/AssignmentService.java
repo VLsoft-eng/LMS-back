@@ -45,8 +45,8 @@ public class AssignmentService {
 
     @Transactional
     public AssignmentDto createAssignment(UUID classId, String title, String description,
-                                          Instant deadline, List<MultipartFile> files,
-                                          UserEntity currentUser) {
+                                          Instant deadline, boolean isTeamBased,
+                                          List<MultipartFile> files, UserEntity currentUser) {
         classSecurityService.requireOwnerOrTeacher(classId, currentUser.getId());
 
         List<String> filePaths = new ArrayList<>();
@@ -63,6 +63,7 @@ public class AssignmentService {
                 .title(title)
                 .description(description)
                 .deadline(deadline)
+                .isTeamBased(isTeamBased)
                 .createdBy(currentUser.getId())
                 .filePaths(filePaths)
                 .build();
