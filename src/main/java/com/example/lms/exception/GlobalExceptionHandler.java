@@ -33,6 +33,18 @@ public class GlobalExceptionHandler {
         return response(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
+    @ExceptionHandler(RubricInvariantViolation.class)
+    public ResponseEntity<ErrorResponse> handleRubricInvariant(RubricInvariantViolation ex,
+                                                                HttpServletRequest request) {
+        return response(HttpStatus.BAD_REQUEST, ex.getCode(), ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(RubricConflictException.class)
+    public ResponseEntity<ErrorResponse> handleRubricConflict(RubricConflictException ex,
+                                                               HttpServletRequest request) {
+        return response(HttpStatus.CONFLICT, ex.getCode(), ex.getMessage(), request);
+    }
+
     /**
      * Handles BadCredentialsException and any other Spring Security AuthenticationException
      * thrown from the service layer (not from the filter chain).
@@ -79,9 +91,14 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<ErrorResponse> response(HttpStatus status, String message,
                                                     HttpServletRequest request) {
+        return response(status, null, message, request);
+    }
+
+    private ResponseEntity<ErrorResponse> response(HttpStatus status, String code, String message,
+                                                    HttpServletRequest request) {
         ErrorResponse body = new ErrorResponse(
                 Instant.now(), status.value(), status.getReasonPhrase(),
-                message, request.getRequestURI());
+                code, message, request.getRequestURI());
         return ResponseEntity.status(status).body(body);
     }
 }
