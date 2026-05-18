@@ -16,4 +16,6 @@ public interface TeamGradeRepository extends JpaRepository<TeamGradeEntity, UUID
     Optional<TeamGradeEntity> findByTeamIdAndAssignmentId(UUID teamId, UUID assignmentId);
 
     Page<TeamGradeEntity> findAllByAssignmentId(UUID assignmentId, Pageable pageable);
+
+    boolean existsByAssignmentId(UUID assignmentId);
 }

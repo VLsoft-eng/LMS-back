@@ -20,4 +20,8 @@ public interface SubmissionRepository extends JpaRepository<SubmissionEntity, UU
 
 	@Query("SELECT s FROM SubmissionEntity s WHERE s.assignmentId IN :assignmentIds")
 	List<SubmissionEntity> findAllByAssignmentIdIn(@Param("assignmentIds") List<UUID> assignmentIds);
+
+	boolean existsByAssignmentIdAndGradeIsNotNull(UUID assignmentId);
+
+	List<SubmissionEntity> findAllByStudentId(UUID studentId);
 }
