@@ -7,17 +7,24 @@ import com.example.lms.entity.ClassMemberEntity;
 import com.example.lms.entity.Role;
 import com.example.lms.entity.SubmissionEntity;
 import com.example.lms.entity.UserEntity;
+import com.example.lms.entity.grading.AssessmentEntity;
+import com.example.lms.entity.grading.RubricEntity;
 import com.example.lms.exception.ResourceNotFoundException;
+import com.example.lms.repository.AssessmentRepository;
 import com.example.lms.repository.AssignmentRepository;
 import com.example.lms.repository.ClassMemberRepository;
 import com.example.lms.repository.ClassRepository;
+import com.example.lms.repository.RubricRepository;
 import com.example.lms.repository.SubmissionRepository;
 import com.example.lms.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,6 +39,8 @@ public class StatsService {
     private final ClassMemberRepository classMemberRepository;
     private final AssignmentRepository assignmentRepository;
     private final SubmissionRepository submissionRepository;
+    private final AssessmentRepository assessmentRepository;
+    private final RubricRepository rubricRepository;
     private final UserRepository userRepository;
     private final ClassSecurityService classSecurityService;
 
@@ -63,13 +72,36 @@ public class StatsService {
                 .filter(s -> studentIds.contains(s.getStudentId()))
                 .collect(Collectors.groupingBy(SubmissionEntity::getStudentId));
 
+        Map<UUID, AssessmentEntity> assessmentsBySubmission = new HashMap<>();
+        if (!allSubmissions.isEmpty()) {
+            for (UUID assignmentId : assignmentIds) {
+                for (AssessmentEntity a : assessmentRepository.findAllByAssignmentId(assignmentId)) {
+                    if (a.getSubmissionId() != null) {
+                        assessmentsBySubmission.put(a.getSubmissionId(), a);
+                    }
+                }
+            }
+        }
+        Map<UUID, AssignmentEntity> assignmentById = assignments.stream()
+                .collect(Collectors.toMap(AssignmentEntity::getId, a -> a));
+
+        Set<UUID> rubricIds = assignments.stream()
+                .map(AssignmentEntity::getRubricId)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<UUID, RubricEntity> rubricsById = rubricIds.isEmpty()
+                ? Map.of()
+                : rubricRepository.findAllById(rubricIds).stream()
+                        .collect(Collectors.toMap(RubricEntity::getId, r -> r));
+
         Instant now = Instant.now();
         long passedDeadlineCount = assignments.stream()
                 .filter(a -> a.getDeadline() != null && a.getDeadline().isBefore(now))
                 .count();
 
         List<StudentStatDto> studentStats = students.stream()
-                .map(member -> buildStudentStat(member, userMap, submissionsByStudent, assignments, now))
+                .map(member -> buildStudentStat(member, userMap, submissionsByStudent,
+                        assessmentsBySubmission, assignmentById, rubricsById, assignments, now))
                 .sorted((a, b) -> {
                     if (a.averageGrade() == null && b.averageGrade() == null) return 0;
                     if (a.averageGrade() == null) return 1;
@@ -106,6 +138,9 @@ public class StatsService {
             ClassMemberEntity member,
             Map<UUID, UserEntity> userMap,
             Map<UUID, List<SubmissionEntity>> submissionsByStudent,
+            Map<UUID, AssessmentEntity> assessmentsBySubmission,
+            Map<UUID, AssignmentEntity> assignmentById,
+            Map<UUID, RubricEntity> rubricsById,
             List<AssignmentEntity> assignments,
             Instant now
     ) {
@@ -124,7 +159,29 @@ public class StatsService {
         int gradedCount = graded.size();
 
         Double averageGrade = graded.isEmpty() ? null
-                : Math.round(graded.stream().mapToInt(s -> s.getGrade()).average().orElse(0) * 10.0) / 10.0;
+                : Math.round(graded.stream().mapToInt(SubmissionEntity::getGrade).average().orElse(0) * 10.0) / 10.0;
+
+        BigDecimal rubricSum = BigDecimal.ZERO;
+        BigDecimal rubricTotalMaxSum = BigDecimal.ZERO;
+        int rubricCount = 0;
+        for (SubmissionEntity s : graded) {
+            AssessmentEntity a = assessmentsBySubmission.get(s.getId());
+            AssignmentEntity assn = assignmentById.get(s.getAssignmentId());
+            if (a != null && assn != null && assn.getRubricId() != null) {
+                RubricEntity rubric = rubricsById.get(assn.getRubricId());
+                if (rubric != null) {
+                    rubricSum = rubricSum.add(a.getFinalScore());
+                    rubricTotalMaxSum = rubricTotalMaxSum.add(rubric.getTotalMaxPoints());
+                    rubricCount++;
+                }
+            }
+        }
+        BigDecimal rubricAverage = null;
+        BigDecimal totalMaxAverage = null;
+        if (rubricCount > 0) {
+            rubricAverage = rubricSum.divide(BigDecimal.valueOf(rubricCount), 2, RoundingMode.HALF_UP);
+            totalMaxAverage = rubricTotalMaxSum.divide(BigDecimal.valueOf(rubricCount), 2, RoundingMode.HALF_UP);
+        }
 
         Set<UUID> submittedAssignmentIds = subs.stream()
                 .map(SubmissionEntity::getAssignmentId)
@@ -135,6 +192,7 @@ public class StatsService {
                 .filter(a -> !submittedAssignmentIds.contains(a.getId()))
                 .count();
 
-        return new StudentStatDto(studentId, name, avatarUrl, submittedCount, gradedCount, averageGrade, missedCount);
+        return new StudentStatDto(studentId, name, avatarUrl, submittedCount, gradedCount,
+                averageGrade, missedCount, rubricAverage, totalMaxAverage);
     }
 }
