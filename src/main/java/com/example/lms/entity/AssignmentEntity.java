@@ -54,6 +54,9 @@ public class AssignmentEntity {
 	@lombok.Builder.Default
 	private List<String> filePaths = new ArrayList<>();
 
+	@Column(name = "rubric_id")
+	private UUID rubricId;
+
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
