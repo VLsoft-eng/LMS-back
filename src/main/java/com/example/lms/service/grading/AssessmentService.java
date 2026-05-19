@@ -361,6 +361,7 @@ public class AssessmentService {
         }
 
         return new MyAssessmentDto(
+                assignment.getClassId(),
                 assignment.getId(),
                 assignment.getTitle(),
                 assessment.getId(),
