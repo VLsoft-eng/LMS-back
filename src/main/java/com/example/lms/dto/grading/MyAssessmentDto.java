@@ -9,6 +9,9 @@ import java.util.UUID;
 @Schema(description = "Студенческое представление ассессмента")
 public record MyAssessmentDto(
 
+        @Schema(description = "ID класса (для группировки и навигации в UI)")
+        UUID classId,
+
         UUID assignmentId,
         String assignmentTitle,
         UUID assessmentId,
