@@ -25,7 +25,7 @@ public class CriterionTemplateEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "rubric_template_id", nullable = false)
+    @Column(name = "rubric_template_id", nullable = false, insertable = false, updatable = false)
     private UUID rubricTemplateId;
 
     @Column(nullable = false)

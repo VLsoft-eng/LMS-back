@@ -11,6 +11,8 @@ import com.example.lms.repository.RubricTemplateRepository;
 import com.example.lms.service.ClassSecurityService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,7 +39,10 @@ public class RubricImportExportService {
     private final RubricTemplateRepository rubricTemplateRepository;
     private final ClassSecurityService classSecurityService;
     private final RubricTemplateService rubricTemplateService;
-    private final ObjectMapper objectMapper;
+
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     @Transactional(readOnly = true)
     public RubricExportPayload export(UUID templateId, UUID currentUserId) {

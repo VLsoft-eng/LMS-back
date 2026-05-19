@@ -24,7 +24,7 @@ public class CriterionScoreEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "assessment_id", nullable = false)
+    @Column(name = "assessment_id", nullable = false, insertable = false, updatable = false)
     private UUID assessmentId;
 
     @Column(name = "criterion_id", nullable = false)
