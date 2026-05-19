@@ -78,7 +78,12 @@ public class RubricTemplateService {
         entity.setDescription(request.description());
         entity.setTotalMaxPoints(request.totalMaxPoints());
         entity.setAllowOvercap(request.allowOvercap());
+
+        // orphanRemoval=true сам снесёт старые criterion_templates, но без flush Hibernate
+        // может попытаться вставить новые до удаления старых, упираясь в
+        // UNIQUE (rubric_template_id, ordinal). Поэтому: clear → flush → addAll.
         entity.getCriteria().clear();
+        entity = rubricTemplateRepository.saveAndFlush(entity);
         entity.getCriteria().addAll(mapCriteria(request.criteria()));
 
         entity.validateInvariants();
