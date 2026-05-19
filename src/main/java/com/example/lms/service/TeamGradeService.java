@@ -4,6 +4,7 @@ import com.example.lms.dto.*;
 import com.example.lms.entity.*;
 import com.example.lms.exception.ConflictException;
 import com.example.lms.exception.ResourceNotFoundException;
+import com.example.lms.exception.RubricConflictException;
 import com.example.lms.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -36,6 +37,11 @@ public class TeamGradeService {
                 .orElseThrow(() -> new ResourceNotFoundException("Assignment not found: " + assignmentId));
 
         classSecurityService.requireOwnerOrTeacher(assignment.getClassId(), currentUser.getId());
+
+        if (assignment.getRubricId() != null) {
+            throw new RubricConflictException("RUBRIC_REQUIRED",
+                    "Assignment is rubric-driven — use POST /assessments instead");
+        }
 
         TeamEntity team = teamRepository.findById(request.teamId())
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found: " + request.teamId()));

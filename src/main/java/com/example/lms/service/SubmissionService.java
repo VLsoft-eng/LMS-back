@@ -5,6 +5,7 @@ import com.example.lms.dto.SubmissionDto;
 import com.example.lms.entity.*;
 import com.example.lms.exception.ForbiddenException;
 import com.example.lms.exception.ResourceNotFoundException;
+import com.example.lms.exception.RubricConflictException;
 import com.example.lms.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -109,6 +110,11 @@ public class SubmissionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Assignment not found: " + assignmentId));
 
         classSecurityService.requireOwnerOrTeacher(assignment.getClassId(), currentUserId);
+
+        if (assignment.getRubricId() != null) {
+            throw new RubricConflictException("RUBRIC_REQUIRED",
+                    "Assignment is rubric-driven — use POST /assessments instead");
+        }
 
         submission.setGrade(request.grade().shortValue());
         submission.setGradedAt(Instant.now());
