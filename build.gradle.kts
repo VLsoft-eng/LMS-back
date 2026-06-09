@@ -48,6 +48,11 @@ dependencies {
 	testImplementation("org.testcontainers:testcontainers-junit-jupiter")
 	testImplementation("org.testcontainers:postgresql:1.20.4")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	// Cucumber BDD (#9185)
+	testImplementation("io.cucumber:cucumber-java:7.15.0")
+	testImplementation("io.cucumber:cucumber-spring:7.15.0")
+	testImplementation("io.cucumber:cucumber-junit-platform-engine:7.15.0")
+	testImplementation("org.junit.platform:junit-platform-suite:1.10.2")
 	runtimeOnly("org.postgresql:postgresql")
 }
 
