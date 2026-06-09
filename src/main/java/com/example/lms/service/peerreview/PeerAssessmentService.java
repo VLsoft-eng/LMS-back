@@ -128,9 +128,10 @@ public class PeerAssessmentService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "No peer assessment found for assignment: " + praId));
 
-        RubricEntity rubric = rubricRepository.findById(assessment.getRubricId())
+        UUID rubricId = assessment.getRubricId();
+        RubricEntity rubric = rubricRepository.findById(rubricId)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Rubric not found: " + assessment.getRubricId()));
+                        "Rubric not found: " + rubricId));
 
         List<PeerCriterionScoreEntity> rawScores = buildRawScores(rubric, request.scores());
         var result = calculateViaAdapter(rubric, rawScores);
