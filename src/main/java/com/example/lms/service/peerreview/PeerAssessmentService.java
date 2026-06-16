@@ -86,7 +86,7 @@ public class PeerAssessmentService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Submission not found: " + pra.getSubmissionId()));
         if (submission.getStudentId().equals(currentUser.getId())) {
-            throw new ForbiddenException("PEER_SELF_REVIEW_FORBIDDEN: Cannot review your own submission");
+            throw new ForbiddenException("PEER_SELF_REVIEW_FORBIDDEN", "Cannot review your own submission");
         }
 
         RubricEntity rubric = loadRubricForAssignment(pra.getAssignmentId());

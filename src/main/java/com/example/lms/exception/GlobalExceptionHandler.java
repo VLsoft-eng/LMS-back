@@ -58,7 +58,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<ErrorResponse> handleForbidden(ForbiddenException ex,
                                                          HttpServletRequest request) {
-        return response(HttpStatus.FORBIDDEN, ex.getMessage(), request);
+        return response(HttpStatus.FORBIDDEN, ex.getCode(), ex.getMessage(), request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

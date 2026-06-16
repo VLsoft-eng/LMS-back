@@ -56,42 +56,8 @@ public class PeerAssessmentSubmitSteps {
 
     @Given("peer review is configured and distributed")
     public void configureAndDistribute() throws Exception {
-        mockMvc.perform(post("/api/v1/assignments/" + ctx.assignmentId + "/peer-review")
-                .header("Authorization", "Bearer " + ctx.teacherToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"reviewsPerStudent\": 1}"))
-                .andExpect(status().isCreated());
-
-        var result = mockMvc.perform(
-                post("/api/v1/assignments/" + ctx.assignmentId + "/peer-review/distribute")
-                        .header("Authorization", "Bearer " + ctx.teacherToken))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        // Find Alice's PRA (Alice reviews Bob's submission)
-        JsonNode pras = mapper.readTree(result.getResponse().getContentAsString());
-        UUID aliceId = ctx.studentIds.get("Alice");
-        for (JsonNode pra : pras) {
-            UUID reviewerId = UUID.fromString(pra.path("reviewerId") != null
-                    ? "" : pra.path("id").asText());
-            // Find PRA where reviewer is Alice
-        }
-        // Store first PRA for Alice
-        for (JsonNode pra : pras) {
-            // Fetch details to find Alice's assignment
-            UUID praId = UUID.fromString(pra.path("id").asText());
-            var detailResult = mockMvc.perform(
-                    org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-                            .get("/api/v1/peer-review-assignments/" + praId)
-                            .header("Authorization", "Bearer " + ctx.teacherToken))
-                    .andReturn();
-            JsonNode detail = mapper.readTree(detailResult.getResponse().getContentAsString());
-            UUID submissionId = UUID.fromString(detail.path("submissionId").asText());
-            // Map PRA to reviewer
-            ctx.praIds.put("Alice", praId); // simplified: store first PRA as Alice's
-            ctx.praId = praId;
-            break;
-        }
+        // Use fixed assignment (Alice→Bob, Bob→Carol, Carol→Alice) for deterministic tests
+        setup.configureAndDistributeFixed(ctx);
     }
 
     @Given("Alice is assigned to review Bob's submission")
@@ -125,15 +91,10 @@ public class PeerAssessmentSubmitSteps {
 
     @When("{word} tries to submit an assessment for his own submission")
     public void selfSubmit(String name) throws Exception {
-        // Find a PRA where Bob would be reviewing himself (shouldn't exist, so use direct call)
-        UUID submissionId = ctx.submissionIds.get(name);
-        // Try to submit to any PRA that belongs to this student's review queue
-        // In reality this can't happen via the normal flow, so this scenario tests the 403 path
-        // We use a synthetic praId that maps to Bob's own submission
-        UUID bobPraId = ctx.praIds.getOrDefault(name, ctx.praId);
+        // Insert a synthetic PRA where the student is both reviewer and submission owner
+        UUID selfPraId = setup.insertSelfReviewPra(ctx, name);
         String token = ctx.studentTokens.get(name);
-        ctx.lastResponse = submitValidScores(bobPraId, token);
-        // The service will reject because Bob is the submission owner
+        ctx.lastResponse = submitValidScores(selfPraId, token);
     }
 
     @When("{word} tries to submit another assessment for the same assignment")
@@ -170,8 +131,8 @@ public class PeerAssessmentSubmitSteps {
     public void submitOutOfRange(String name, int value) throws Exception {
         UUID praId = ctx.praIds.getOrDefault(name, ctx.praId);
         String token = ctx.studentTokens.get(name);
-        // Submit with out-of-range score (>5.0 for our test rubric)
-        String body = buildScoresBody(true, value);
+        // Build scores using real criterion IDs but with an out-of-range score value
+        String body = buildScoresBodyFromRubric(true, (double) value);
         ctx.lastResponse = mockMvc.perform(post("/api/v1/peer-review-assignments/" + praId + "/assessment")
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -182,7 +143,8 @@ public class PeerAssessmentSubmitSteps {
     public void updateAssessment(String name) throws Exception {
         UUID praId = ctx.praIds.getOrDefault(name, ctx.praId);
         String token = ctx.studentTokens.get(name);
-        String body = buildScoresBody(false, 4);
+        // Build valid update scores using real criterion IDs
+        String body = buildScoresBodyFromRubric(false, 4.0);
         ctx.lastResponse = mockMvc.perform(put("/api/v1/peer-review-assignments/" + praId + "/assessment")
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -254,10 +216,34 @@ public class PeerAssessmentSubmitSteps {
                 .content(body));
     }
 
-    private String buildScoresBody(boolean boolVal, double scoreVal) {
-        return String.format(
-                "{\"scores\":[{\"criterionId\":\"00000000-0000-0000-0000-000000000001\",\"boolValue\":%b}," +
-                "{\"criterionId\":\"00000000-0000-0000-0000-000000000002\",\"scoreValue\":%.1f}]}",
-                boolVal, scoreVal);
+    /**
+     * Builds a scores body using real criterion IDs from the rubric.
+     * boolVal is used for BOOLEAN criteria; scoreVal is used for SCORE/PERCENT criteria.
+     */
+    private String buildScoresBodyFromRubric(boolean boolVal, double scoreVal) throws Exception {
+        var rubricResult = mockMvc.perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/assignments/" + ctx.assignmentId + "/rubric")
+                        .header("Authorization", "Bearer " + ctx.teacherToken))
+                .andReturn();
+        JsonNode rubric = mapper.readTree(rubricResult.getResponse().getContentAsString());
+        JsonNode criteria = rubric.path("criteria");
+
+        StringBuilder scoresJson = new StringBuilder("[");
+        for (int i = 0; i < criteria.size(); i++) {
+            JsonNode c = criteria.get(i);
+            String kind = c.path("kind").asText();
+            String id = c.path("id").asText();
+            if (i > 0) scoresJson.append(",");
+            scoresJson.append("{\"criterionId\":\"").append(id).append("\"");
+            switch (kind) {
+                case "BOOLEAN" -> scoresJson.append(",\"boolValue\":").append(boolVal);
+                case "SCORE" -> scoresJson.append(",\"scoreValue\":").append(scoreVal);
+                case "PERCENT" -> scoresJson.append(",\"percentValue\":").append(scoreVal);
+            }
+            scoresJson.append("}");
+        }
+        scoresJson.append("]");
+        return "{\"scores\":" + scoresJson + "}";
     }
 }

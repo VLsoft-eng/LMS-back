@@ -37,11 +37,8 @@ CREATE TABLE peer_review_assignments (
     CONSTRAINT fk_peer_review_assignments_assignment
         FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE,
     CONSTRAINT fk_peer_review_assignments_submission
-        FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE,
-    CONSTRAINT chk_peer_review_no_self_review
-        CHECK (reviewer_id != (
-            SELECT student_id FROM submissions WHERE id = submission_id
-        ))
+        FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
+    -- self-review guard enforced at service layer (PostgreSQL does not allow subqueries in CHECK)
 );
 
 CREATE INDEX idx_peer_review_assignments_reviewer  ON peer_review_assignments(reviewer_id);

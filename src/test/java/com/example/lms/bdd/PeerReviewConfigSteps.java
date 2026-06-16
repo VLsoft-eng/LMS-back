@@ -37,11 +37,6 @@ public class PeerReviewConfigSteps {
 
     // ── Given ───────────────────────────────────────────────────────────────
 
-    @Given("a class exists with a teacher and {int} enrolled students")
-    public void classWithTeacherAndStudents(int studentCount) throws Exception {
-        setup.createClassWithStudents(ctx, studentCount);
-    }
-
     @Given("an assignment exists in that class")
     public void assignmentExists() throws Exception {
         setup.createAssignment(ctx);
@@ -76,6 +71,11 @@ public class PeerReviewConfigSteps {
                         .header("Authorization", "Bearer " + ctx.teacherToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"reviewsPerStudent\": " + count + "}"));
+    }
+
+    @When("the teacher tries to configure peer review with reviewsPerStudent = {int}")
+    public void teacherTriesToConfigurePeerReview(int count) throws Exception {
+        teacherConfiguresPeerReview(count);
     }
 
     @When("a student tries to configure peer review with reviewsPerStudent = {int}")

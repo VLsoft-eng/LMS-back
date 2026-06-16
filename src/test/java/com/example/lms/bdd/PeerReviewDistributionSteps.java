@@ -66,7 +66,8 @@ public class PeerReviewDistributionSteps {
 
     @Given("only {int} student has submitted their work")
     public void onlyOneStudentSubmitted(int count) throws Exception {
-        setup.submitWork(ctx, "Alice");
+        // Background already submitted all students — delete extras, keeping only Alice's submission
+        setup.keepOnlyAliceSubmission(ctx);
     }
 
     @When("the teacher triggers reviewer distribution")

@@ -16,7 +16,7 @@ import org.springframework.test.context.ContextConfiguration;
 @CucumberContextConfiguration
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
+@ActiveProfiles({"test", "cucumber"})
 @ContextConfiguration(initializers = RepositoryTestContextInitializer.class)
 public class CucumberSpringConfiguration {
     // Spring context is shared across all Cucumber scenarios in the same run

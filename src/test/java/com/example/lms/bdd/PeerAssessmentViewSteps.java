@@ -35,11 +35,6 @@ public class PeerAssessmentViewSteps {
 
     private final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    @Given("a class with a teacher and {int} students \\(Alice, Bob, Carol)")
-    public void setupClass(int count) throws Exception {
-        setup.createClassWithStudents(ctx, count);
-    }
-
     @Given("an assignment with a rubric containing {int} criteria")
     public void setupAssignmentWithRubric(int count) throws Exception {
         setup.createAssignment(ctx);
@@ -51,22 +46,8 @@ public class PeerAssessmentViewSteps {
         for (String name : ctx.studentTokens.keySet()) {
             setup.submitWork(ctx, name);
         }
-        mockMvc.perform(post("/api/v1/assignments/" + ctx.assignmentId + "/peer-review")
-                .header("Authorization", "Bearer " + ctx.teacherToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"reviewsPerStudent\": 1}"))
-                .andExpect(status().isCreated());
-        var distResult = mockMvc.perform(
-                post("/api/v1/assignments/" + ctx.assignmentId + "/peer-review/distribute")
-                        .header("Authorization", "Bearer " + ctx.teacherToken))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        var pras = mapper.readTree(distResult.getResponse().getContentAsString());
-        if (pras.size() > 0) {
-            ctx.praId = UUID.fromString(pras.get(0).path("id").asText());
-            ctx.praIds.put("Alice", ctx.praId);
-        }
+        // Use fixed assignment (Alice→Bob, Bob→Carol, Carol→Alice) for deterministic tests
+        setup.configureAndDistributeFixed(ctx);
     }
 
     @Given("{word} has submitted a peer assessment for Bob's submission")
@@ -80,6 +61,11 @@ public class PeerAssessmentViewSteps {
     @Given("no one has reviewed Carol's submission yet")
     public void noReviewsForCarol() {
         // Intentionally no assessments submitted for Carol
+    }
+
+    @Given("the teacher is authenticated")
+    public void teacherAuthenticated() {
+        // Teacher token is already set in ctx.teacherToken from background
     }
 
     // ── When ─────────────────────────────────────────────────────────────────

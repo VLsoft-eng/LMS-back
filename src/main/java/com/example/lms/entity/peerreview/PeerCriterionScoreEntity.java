@@ -24,9 +24,6 @@ public class PeerCriterionScoreEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "peer_assessment_id", nullable = false)
-    private UUID peerAssessmentId;
-
     @Column(name = "criterion_id", nullable = false)
     private UUID criterionId;
 

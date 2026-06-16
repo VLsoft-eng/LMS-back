@@ -36,6 +36,7 @@ public class CommonSteps {
 
     @Before
     public void cleanDatabase() {
+        ctx.reset();
         // Clean peer-review tables first (FK order)
         jdbc.execute("DELETE FROM peer_criterion_scores");
         jdbc.execute("DELETE FROM peer_assessments");

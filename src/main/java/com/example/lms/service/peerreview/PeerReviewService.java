@@ -120,14 +120,25 @@ public class PeerReviewService {
         // Shuffle deterministically per-call for fair distribution
         Collections.shuffle(studentIds);
 
+        // Pre-count existing assignments per reviewer to ensure idempotency
+        Map<UUID, Long> existingCountByReviewer = new HashMap<>();
+        for (UUID studentId : studentIds) {
+            long count = assignmentRepo.findAllByReviewerIdAndAssignmentId(studentId, assignmentId).size();
+            existingCountByReviewer.put(studentId, count);
+        }
+
         List<PeerReviewAssignmentEntity> newAssignments = new ArrayList<>();
 
         for (int i = 0; i < studentIds.size(); i++) {
             UUID reviewerId = studentIds.get(i);
+            long alreadyAssigned = existingCountByReviewer.getOrDefault(reviewerId, 0L);
+            int needed = reviewsPerStudent - (int) alreadyAssigned;
+            if (needed <= 0) continue; // already has enough assignments — skip
+
             int assigned = 0;
             int offset = 1;
 
-            while (assigned < reviewsPerStudent && offset < studentIds.size()) {
+            while (assigned < needed && offset < studentIds.size()) {
                 int targetIdx = (i + offset) % studentIds.size();
                 UUID targetStudentId = studentIds.get(targetIdx);
                 SubmissionEntity targetSubmission = submissionByStudent.get(targetStudentId);
@@ -141,8 +152,8 @@ public class PeerReviewService {
                                 .reviewerId(reviewerId)
                                 .submissionId(targetSubmission.getId())
                                 .build());
+                        assigned++;
                     }
-                    assigned++;
                 }
                 offset++;
             }
